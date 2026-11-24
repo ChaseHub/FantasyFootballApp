@@ -1,0 +1,32 @@
+<div class="stepper-shell">
+  <button
+    type="button"
+    class="ch-btn ch-btn-secondary ch-step-btn"
+    [class.is-compact]="compact()"
+    [disabled]="!canPrev()"
+    aria-label="Previous week"
+    (click)="step(-1)"
+  >
+    ←
+  </button>
+
+  <app-picker
+    [options]="pickerOptions()"
+    [value]="week()"
+    [compact]="compact()"
+    [ariaLabel]="'Select ' + prefix().toLowerCase()"
+    [sheetTitle]="'Jump to ' + prefix()"
+    (valueChange)="weekChange.emit($event)"
+  />
+
+  <button
+    type="button"
+    class="ch-btn ch-btn-secondary ch-step-btn"
+    [class.is-compact]="compact()"
+    [disabled]="!canNext()"
+    aria-label="Next week"
+    (click)="step(1)"
+  >
+    →
+  </button>
+</div>

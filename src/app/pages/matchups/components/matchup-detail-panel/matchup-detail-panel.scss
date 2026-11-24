@@ -1,0 +1,235 @@
+@use 'mixins' as *;
+
+.detail-card {
+  @include stack(16px);
+
+  @include mq(md) {
+    gap: 18px;
+  }
+}
+
+.detail-head {
+  @include row(12px, flex-end, space-between, wrap);
+}
+
+.sync-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+
+  @include mq(md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+.side-summary {
+  @include row(10px, center, space-between, wrap);
+  transition: border-color 140ms ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.summary-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.summary-nums {
+  font-size: 12px;
+  color: var(--ink-secondary);
+
+  strong {
+    color: var(--ink);
+  }
+}
+
+.empty-detail {
+  text-align: center;
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+}
+
+/* Mobile-First Stacked Lineup Duels -> Precision Desktop Table at md */
+.mobile-lineups {
+  @include stack(10px);
+
+  @include mq(md) {
+    display: none;
+  }
+}
+
+.desktop-lineups {
+  display: none;
+
+  @include mq(md) {
+    display: block;
+  }
+}
+
+.m-slot-card {
+  @include stack(8px);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-soft);
+}
+
+.m-slot-head {
+  @include row(8px, center, space-between);
+  font-size: 10.5px;
+  color: var(--ink-muted);
+}
+
+.m-slot-side {
+  @include row(10px, center, space-between);
+
+  &.is-away {
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+}
+
+.m-slot-player {
+  @include row(8px, center);
+  min-width: 0;
+  flex: 1;
+}
+
+.m-slot-meta {
+  @include stack(2px);
+  min-width: 0;
+}
+
+.m-slot-pts {
+  @include stack(0);
+  align-items: flex-end;
+  flex-shrink: 0;
+  font-size: 13.5px;
+}
+
+.m-slot-proj {
+  font-size: 10.5px;
+  color: var(--ink-muted);
+}
+
+.mobile-bench-title {
+  padding: var(--space-1) 2px;
+}
+
+/* Desktop Comparison Table */
+.comparison-table {
+  min-width: 680px;
+
+  th.right-align,
+  td.right-align {
+    text-align: right;
+  }
+
+  th.slot-col,
+  td.slot-col {
+    text-align: center;
+    width: 64px;
+    color: var(--ink-muted);
+    font-size: 12px;
+  }
+}
+
+.player-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &.is-right {
+    align-items: flex-end;
+  }
+}
+
+.live-game-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--jade);
+  padding-left: 42px;
+
+  &.is-right {
+    padding-left: 0;
+    padding-right: 42px;
+  }
+
+  &.is-final {
+    color: var(--ink-muted);
+  }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--jade);
+  flex-shrink: 0;
+
+  &.is-rz {
+    background: var(--negative);
+  }
+}
+
+.player-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  &.is-right {
+    justify-content: flex-end;
+  }
+}
+
+.pos-badge {
+  min-width: 34px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.nfl-team {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.section-divider-row td {
+  height: 36px;
+  background: var(--surface-soft);
+  padding: 6px 16px;
+}
+
+.is-bench {
+  opacity: 0.8;
+}
+
+.muted-col {
+  color: var(--ink-muted);
+}
+
+.bye-label {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--neutral-soft);
+  color: var(--ink-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

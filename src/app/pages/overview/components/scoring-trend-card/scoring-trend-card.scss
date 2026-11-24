@@ -1,0 +1,132 @@
+@use 'mixins' as *;
+
+.trend-card {
+  @include stack(14px);
+}
+
+.trend-header {
+  @include row(12px, flex-end, space-between, wrap);
+}
+
+.point-pill {
+  padding: 6px 12px;
+  border-radius: var(--r-xs);
+  @include row(8px, center);
+  font-size: 12px;
+  color: var(--ink-secondary);
+
+  .sep {
+    color: var(--border-strong);
+  }
+
+  .high-val {
+    color: var(--jade);
+    font-weight: 600;
+  }
+}
+
+.empty-chart {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+}
+
+.svg-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  svg {
+    width: 100%;
+    min-width: 320px;
+    height: auto;
+    display: block;
+  }
+}
+
+.ref-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.focus-guide {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.axis-text,
+.x-label {
+  fill: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.x-label.is-active {
+  fill: var(--jade);
+  font-weight: 700;
+}
+
+.series-high {
+  stroke: var(--chart-primary);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.series-avg {
+  stroke: var(--chart-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.point-target {
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.dot-high {
+  fill: var(--chart-primary);
+  stroke: var(--surface);
+  stroke-width: 2;
+  transition: r 120ms ease;
+}
+
+.dot-avg {
+  fill: var(--chart-secondary);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.legend-row {
+  @include row(16px, center, flex-start, wrap);
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+}
+
+.legend-item {
+  @include row(8px, center);
+}
+
+.line-swatch {
+  width: 18px;
+  height: 2.5px;
+  border-radius: 2px;
+
+  &.primary {
+    background: var(--chart-primary);
+  }
+
+  &.secondary {
+    border-top: 2px dashed var(--chart-secondary);
+    height: 0;
+  }
+}

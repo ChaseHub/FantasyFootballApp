@@ -1,0 +1,249 @@
+@use 'mixins' as *;
+
+:host {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.picker-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  @include row(var(--space-2), center, space-between);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease;
+
+  @include mq(md) {
+    min-height: 38px;
+    height: 38px;
+    padding: 4px 11px;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--jade);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+:host(.is-compact) .picker-trigger {
+  @include mq(md) {
+    min-height: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
+:host(.is-dark) .picker-trigger {
+  background: var(--graphite-raised);
+  border-color: var(--on-graphite-border-strong);
+  color: var(--on-graphite);
+
+  &:hover:not(:disabled) {
+    background: var(--graphite-hover);
+    border-color: var(--signal-border);
+  }
+}
+
+.trigger-leading {
+  @include row(8px, center);
+  min-width: 0;
+  flex: 1;
+}
+
+.trigger-text {
+  @include stack(0);
+  min-width: 0;
+}
+
+.trigger-label {
+  @include truncate;
+}
+
+.trigger-sub {
+  font-size: 10.5px;
+  color: var(--ink-muted);
+  @include truncate;
+}
+
+:host(.is-dark) .trigger-sub {
+  color: var(--on-graphite-muted);
+}
+
+.trigger-placeholder {
+  color: var(--ink-muted);
+  @include truncate;
+}
+
+.trigger-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: var(--r-xs);
+  background: var(--neutral-soft);
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+}
+
+:host(.is-dark) .trigger-badge {
+  background: var(--on-graphite-tint);
+  color: var(--on-graphite-muted);
+}
+
+.trigger-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.72;
+}
+
+/* Mobile Sheet List */
+.picker-search-wrap {
+  margin-bottom: var(--space-3);
+}
+
+.picker-list {
+  @include stack(6px);
+}
+
+.picker-option {
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--ink);
+  @include row(var(--space-2), center, space-between);
+  text-align: left;
+  cursor: pointer;
+
+  &.is-selected {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+/* Desktop Floating Popover (position: fixed prevents clipping inside overflow:hidden containers) */
+.picker-popover {
+  position: fixed;
+  z-index: var(--z-popover);
+  max-width: min(360px, calc(100vw - 24px));
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sheet);
+  padding: 6px;
+  @include stack(6px);
+
+  &.is-up {
+    transform: translateY(-100%);
+  }
+}
+
+.popover-search-wrap {
+  padding: 2px 2px 0;
+}
+
+.popover-search {
+  min-height: 34px;
+  height: 34px;
+  font-size: 13px;
+}
+
+.popover-list {
+  @include stack(3px);
+  max-height: 290px;
+  overflow-y: auto;
+}
+
+.popover-option {
+  min-height: 38px;
+  padding: 7px 10px;
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  @include row(8px, center, space-between);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-soft);
+  }
+
+  &.is-selected {
+    background: var(--jade-soft);
+    border-color: var(--jade);
+    font-weight: 700;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.opt-main {
+  @include row(10px, center);
+  min-width: 0;
+  flex: 1;
+}
+
+.opt-copy {
+  @include stack(1px);
+  min-width: 0;
+}
+
+.opt-label {
+  font-size: 13.5px;
+  color: var(--ink);
+  @include truncate;
+}
+
+.opt-sub {
+  font-size: 11px;
+  color: var(--ink-muted);
+  @include truncate;
+}
+
+.opt-right {
+  @include row(8px, center);
+  flex-shrink: 0;
+}
+
+.popover-badge {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.opt-check {
+  color: var(--jade);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.picker-empty {
+  margin: 0;
+  padding: 16px 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}

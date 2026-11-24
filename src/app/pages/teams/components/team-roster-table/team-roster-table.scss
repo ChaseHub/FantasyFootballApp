@@ -1,0 +1,225 @@
+@use 'mixins' as *;
+
+.roster-panel {
+  padding: 0;
+  overflow: hidden;
+  @include stack(0);
+}
+
+.roster-head {
+  padding: 16px 14px 10px;
+  @include row(12px, flex-end, space-between, wrap);
+
+  @include mq(md) {
+    padding: 22px 24px 14px;
+  }
+}
+
+.filter-bar {
+  padding: 0 14px 10px;
+  @include scroll-rail(6px);
+
+  @include mq(md) {
+    padding: 0 24px 12px;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+.filter-btn {
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mobile-roster-feed {
+  padding: 0 12px 14px;
+}
+
+.skeleton-rows {
+  padding: 0 16px 16px;
+  @include stack(10px);
+
+  @include mq(md) {
+    padding: 0 24px 24px;
+  }
+}
+
+.lineup-bar {
+  margin: 0 14px 12px;
+  @include row(10px, center, space-between, wrap);
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+
+  @include mq(md) {
+    margin: 0 24px 14px;
+  }
+
+  strong {
+    color: var(--ink);
+  }
+
+  .sep {
+    margin: 0 6px;
+    color: var(--border-strong);
+  }
+}
+
+.lineup-bar-main {
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.reset-wk-btn {
+  padding: 4px 10px;
+  font-size: 11.5px;
+}
+
+.empty-state {
+  margin: 0 14px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+
+  @include mq(md) {
+    margin: 0 24px 24px;
+  }
+}
+
+.player-cell {
+  @include row(8px, center, flex-start, wrap);
+}
+
+.player-name {
+  font-weight: 600;
+}
+
+.player-team {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.strong-num {
+  font-weight: 600;
+}
+
+.bench-row,
+.bench-card {
+  opacity: 0.78;
+}
+
+.optimizer-body {
+  @include stack(var(--space-3));
+  padding: 0 14px 16px;
+
+  @include mq(md) {
+    padding: 0 24px 20px;
+  }
+}
+
+.optimizer-summary {
+  @include row(var(--space-3), center, space-between, wrap);
+}
+
+.opt-kpis {
+  @include row(var(--space-4), center, flex-start, wrap);
+
+  @include mq(md) {
+    gap: var(--space-5);
+  }
+}
+
+.opt-kpi {
+  @include stack(2px);
+}
+
+.opt-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+
+  &.is-jade {
+    color: var(--jade);
+  }
+
+  &.is-pos {
+    color: var(--positive);
+  }
+}
+
+.opt-alerts {
+  @include stack(6px);
+}
+
+.opt-alert-pill {
+  @include row(6px, center, flex-start, wrap);
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--negative-border);
+  background: var(--negative-soft);
+  color: var(--ink);
+  font-size: 12.5px;
+
+  strong {
+    color: var(--negative);
+  }
+}
+
+.opt-swaps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+
+  @include mq(sm) {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+.opt-swap-card {
+  @include stack(6px);
+  padding: 12px var(--space-3);
+  border-color: var(--jade);
+}
+
+.swap-top {
+  gap: var(--space-2);
+}
+
+.swap-gain {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--positive);
+}
+
+.swap-pair {
+  @include stack(2px);
+}
+
+.swap-start {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.swap-sit,
+.swap-reason {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.opt-locked {
+  font-size: 13px;
+  color: var(--ink-secondary);
+
+  strong {
+    color: var(--positive);
+  }
+}
+
+.is-upgraded-slot {
+  background: var(--jade-soft);
+}
+
+.sit-strike {
+  text-decoration: line-through;
+  color: var(--ink-muted);
+}

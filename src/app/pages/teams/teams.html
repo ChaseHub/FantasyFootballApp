@@ -1,0 +1,641 @@
+<div class="ch-page ch-stack teams-page ch-enter">
+  @if (!sleeper.dashboard()) {
+    <section class="ch-card empty-card">
+      <h1 class="ch-section-title">No league data loaded</h1>
+      <p>Load or switch leagues from the top bar to inspect franchises.</p>
+    </section>
+  } @else if (!isDetailView()) {
+    <app-page-header
+      [overline]="'Franchise Directory · ' + orderedDirectory().length + ' Teams'"
+      title="Teams"
+      context="Compare standings, power rankings, scoring output, and current-week matchups across every franchise."
+      mobileContext="Inspect rosters, Start/Sit Lab & schedule luck"
+    >
+      <div class="ch-segmented" role="tablist" aria-label="Sort teams by">
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="directorySort() === 'standings'"
+          (click)="setDirectorySort('standings')"
+        >
+          Standings
+        </button>
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="directorySort() === 'power'"
+          (click)="setDirectorySort('power')"
+        >
+          Power
+        </button>
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="directorySort() === 'points'"
+          (click)="setDirectorySort('points')"
+        >
+          Scoring
+        </button>
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="directorySort() === 'allplay'"
+          (click)="setDirectorySort('allplay')"
+        >
+          All-Play
+        </button>
+      </div>
+    </app-page-header>
+
+    @if (directorySnapshot(); as snap) {
+      <section class="ch-feature ch-stack league-snap">
+        <div class="snap-top">
+          <div>
+            <span class="ch-overline on-dark">
+              League Snapshot · Week {{ snap.currentWeek }} · Top {{ playoffTeams() }} Make Playoffs
+            </span>
+            <h2 class="snap-title">Frontrunners &amp; Cut Line</h2>
+          </div>
+
+          @if (snap.myTeam; as mine) {
+            <a class="ch-btn ch-btn-primary snap-pin-cta" [routerLink]="['/teams', mine.rosterId]">
+              My Team: {{ mine.teamName }} (#{{ mine.standingsRank }}) →
+            </a>
+          }
+        </div>
+
+        <div class="ch-stat-strip-4">
+          <a class="ch-feature-tile snap-link" [routerLink]="['/teams', snap.standingsLeader.rosterId]">
+            <span class="ch-team-hero-stat">Standings #1</span>
+            <strong class="ch-team-hero-val snap-name">{{ snap.standingsLeader.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              {{ snap.standingsLeader.recordLabel }} · {{ snap.standingsLeader.pointsFor.toFixed(1) }} PF
+            </span>
+          </a>
+
+          <a class="ch-feature-tile snap-link" [routerLink]="['/teams', snap.pointsLeader.rosterId]">
+            <span class="ch-team-hero-stat">Scoring Leader</span>
+            <strong class="ch-team-hero-val snap-name">{{ snap.pointsLeader.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              {{ snap.pointsLeader.pointsFor.toFixed(1) }} PF · {{ avgPoints(snap.pointsLeader) }}/wk
+            </span>
+          </a>
+
+          <a class="ch-feature-tile snap-link" [routerLink]="['/teams', snap.powerLeader.rosterId]">
+            <span class="ch-team-hero-stat">Power #1</span>
+            <strong class="ch-team-hero-val snap-name">{{ snap.powerLeader.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              All-Play {{ snap.powerLeader.allPlayWins }}-{{ snap.powerLeader.allPlayLosses }} · Eff
+              {{ snap.powerLeader.lineupEfficiencyPct.toFixed(0) }}%
+            </span>
+          </a>
+
+          <a class="ch-feature-tile snap-link" [routerLink]="['/teams', snap.cutoffTeam.rosterId]">
+            <span class="ch-team-hero-stat">Playoff Line (#{{ snap.cutoffSeed }})</span>
+            <strong class="ch-team-hero-val snap-name">{{ snap.cutoffTeam.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              {{ snap.cutoffTeam.recordLabel }} · {{ snap.cutoffTeam.pointsFor.toFixed(1) }} PF
+            </span>
+          </a>
+        </div>
+      </section>
+    }
+
+    <div class="dir-cards-grid">
+      @for (team of sortedDirectory(); track team.rosterId) {
+        @let liveMatchup = teamMatchupByRoster().get(team.rosterId);
+        @let isPlayoffSeed = team.standingsRank <= playoffTeams();
+        <a
+          class="ch-card ch-interactive ch-team-tile"
+          [class.is-pinned]="sleeper.myTeam()?.rosterId === team.rosterId"
+          [class.is-playoff-line]="directorySort() === 'standings' && team.standingsRank === playoffTeams()"
+          [routerLink]="['/teams', team.rosterId]"
+        >
+          <div class="ch-row-between">
+            <div class="ch-flex-row">
+              <span
+                class="ch-chip mono"
+                [class.is-jade]="isPlayoffSeed"
+                [class.is-neutral]="!isPlayoffSeed"
+              >
+                #{{ team.standingsRank }} {{ isPlayoffSeed ? '· Cut' : '' }}
+              </span>
+              @if (team.streak && team.streak !== '—') {
+                <span
+                  class="ch-chip mono"
+                  [class.is-positive]="team.streak.startsWith('W')"
+                  [class.is-negative]="team.streak.startsWith('L')"
+                  [class.is-neutral]="!team.streak.startsWith('W') && !team.streak.startsWith('L')"
+                >
+                  {{ team.streak }}
+                </span>
+              }
+            </div>
+
+            @if (sleeper.myTeam()?.rosterId === team.rosterId) {
+              <span class="ch-chip is-jade">My Team</span>
+            } @else {
+              <span class="ch-chip is-neutral mono">Pwr #{{ team.powerRank }}</span>
+            }
+          </div>
+
+          <div class="tile-identity">
+            <div class="ch-avatar sz-48">
+              @if (team.avatarUrl) {
+                <img [src]="team.avatarUrl" [alt]="team.teamName" />
+              } @else {
+                {{ team.initials }}
+              }
+            </div>
+            <div class="ch-stack tile-names">
+              <strong class="team-name">{{ team.teamName }}</strong>
+              <span class="manager-name">{{ team.managerName }}</span>
+            </div>
+          </div>
+
+          <div class="ch-well ch-team-metrics">
+            <div class="ch-stack tile-metric">
+              <span class="tile-metric-label">Record</span>
+              <strong class="mono">{{ team.recordLabel }}</strong>
+            </div>
+            <div class="ch-stack tile-metric">
+              <span class="tile-metric-label">All-Play</span>
+              <strong class="mono">{{ team.allPlayWins }}-{{ team.allPlayLosses }}</strong>
+            </div>
+            <div class="ch-stack tile-metric">
+              <span class="tile-metric-label">Season PF</span>
+              <strong class="mono">{{ team.pointsFor.toFixed(1) }}</strong>
+            </div>
+          </div>
+
+          <div class="ch-stack tile-meter-wrap">
+            <div class="ch-row-between meter-caption mono">
+              <span>{{ avgPoints(team) }}/wk · PA {{ team.pointsAgainst.toFixed(0) }}</span>
+              <span
+                [class.pos-val]="team.luckScore >= 0.4"
+                [class.neg-val]="team.luckScore <= -0.4"
+              >
+                Luck {{ team.luckScore >= 0 ? '+' : '' }}{{ team.luckScore.toFixed(1) }}
+              </span>
+            </div>
+            <div class="ch-meter">
+              <div class="ch-meter-fill" [style.width.%]="pfMeterPct(team)"></div>
+            </div>
+          </div>
+
+          <div class="tile-foot">
+            @if (liveMatchup) {
+              <span class="tile-week mono">
+                Wk {{ liveMatchup.week }}
+                @if (liveMatchup.oppName) {
+                  · vs {{ liveMatchup.oppName }}
+                } @else {
+                  · Bye
+                }
+              </span>
+            } @else {
+              <span class="tile-week">
+                @if (team.usesFaab) {
+                  ${{ team.faabRemaining }} FAAB
+                } @else {
+                  Waiver #{{ team.waiverPriority }}
+                }
+              </span>
+            }
+            <span class="open-cue">Inspect →</span>
+          </div>
+        </a>
+      }
+    </div>
+  } @else if (selectedTeam(); as team) {
+    <div class="detail-nav">
+      <div class="ch-flex-row">
+        <a class="ch-btn ch-btn-ghost is-compact" routerLink="/teams">← Teams</a>
+
+        @if (adjacentTeams().prev; as prevTeam) {
+          <div class="ch-flex-row">
+            <a
+              class="ch-btn ch-btn-secondary ch-step-btn is-compact"
+              [routerLink]="['/teams', prevTeam.rosterId]"
+              [title]="'Previous: ' + prevTeam.teamName"
+              aria-label="Previous team"
+            >
+              ‹
+            </a>
+            @if (adjacentTeams().next; as nextTeam) {
+              <a
+                class="ch-btn ch-btn-secondary ch-step-btn is-compact"
+                [routerLink]="['/teams', nextTeam.rosterId]"
+                [title]="'Next: ' + nextTeam.teamName"
+                aria-label="Next team"
+              >
+                ›
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="detail-nav-right">
+        <a
+          class="ch-btn ch-btn-ghost is-compact ch-desktop-only"
+          [routerLink]="['/insights']"
+          [queryParams]="{ team: team.rosterId }"
+        >
+          What-If Lab →
+        </a>
+        <a
+          class="ch-btn ch-btn-ghost is-compact ch-desktop-only"
+          [routerLink]="['/trades']"
+          [queryParams]="{ team: team.rosterId }"
+        >
+          Trades →
+        </a>
+        <a class="ch-btn ch-btn-ghost is-compact ch-desktop-only" routerLink="/matchups">Matchups →</a>
+        <app-picker
+          [options]="teamSwitchOptions()"
+          [value]="team.rosterId"
+          [compact]="true"
+          [searchable]="true"
+          ariaLabel="Switch franchise"
+          sheetTitle="Switch Franchise"
+          (valueChange)="switchTeamTo($event)"
+        />
+      </div>
+    </div>
+
+    <section class="ch-feature ch-stack team-hero">
+      <div class="hero-top">
+        <div class="hero-identity">
+          <div class="ch-avatar sz-48 on-dark detail-avatar">
+            @if (team.avatarUrl) {
+              <img [src]="team.avatarUrl" [alt]="team.teamName" />
+            } @else {
+              {{ team.initials }}
+            }
+          </div>
+
+          <div class="hero-title-wrap">
+            <div class="ch-flex-row hero-badges">
+              <span
+                class="ch-chip mono"
+                [class.is-jade]="team.standingsRank <= playoffTeams()"
+                [class.is-dark-muted]="team.standingsRank > playoffTeams()"
+              >
+                #{{ team.standingsRank }} {{ team.standingsRank <= playoffTeams() ? 'Playoff Seed' : 'Outside Cut' }}
+              </span>
+              <span class="ch-chip is-dark-muted mono">Power #{{ team.powerRank }}</span>
+              <span class="ch-chip is-dark-muted mono">Scoring #{{ team.pointsRank }}</span>
+              @if (team.streak && team.streak !== '—') {
+                <span class="ch-chip is-dark-muted mono">{{ team.streak }}</span>
+              }
+            </div>
+            <h1 class="hero-team-name">{{ team.teamName }}</h1>
+            <div class="ch-flex-row hero-sub">
+              <span>{{ team.managerName }}</span>
+              <span>·</span>
+              <span>{{ team.rosterSize }} Rostered ({{ team.starterCount }} Starters)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <button
+            type="button"
+            class="pin-btn"
+            [class.is-pinned]="isMyTeam()"
+            (click)="toggleMyTeam()"
+          >
+            {{ isMyTeam() ? '✓ Pinned as My Team' : 'Pin as My Team' }}
+          </button>
+
+          <div class="ch-record-well hero-record-well">
+            <div class="ch-stack">
+              <span class="ch-team-hero-stat">Record</span>
+              <strong class="rw-value mono">{{ team.recordLabel }}</strong>
+            </div>
+            <div class="ch-stack">
+              <span class="ch-team-hero-stat">Season PF</span>
+              <strong class="rw-value mono">{{ team.pointsFor.toFixed(1) }}</strong>
+            </div>
+            <div class="ch-stack">
+              <span class="ch-team-hero-stat">Avg / Wk</span>
+              <strong class="rw-value mono">{{ avgPoints(team) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ch-stat-strip-4">
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">All-Play Record</span>
+          <strong class="ch-team-hero-val mono">{{ team.allPlayWins }}-{{ team.allPlayLosses }}</strong>
+          <span class="ch-team-hero-sub mono">{{ allPlayPct(team) }}% vs league weekly</span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">Lineup Efficiency</span>
+          <strong class="ch-team-hero-val mono">{{ team.lineupEfficiencyPct.toFixed(1) }}%</strong>
+          <span class="ch-team-hero-sub mono">Max PF {{ team.maxPointsFor.toFixed(1) }}</span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">Point Differential</span>
+          <strong class="ch-team-hero-val mono">
+            {{ team.pointDifferential >= 0 ? '+' : '' }}{{ team.pointDifferential.toFixed(1) }}
+          </strong>
+          <span class="ch-team-hero-sub mono">PA {{ team.pointsAgainst.toFixed(1) }}</span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">Front Office</span>
+          <strong class="ch-team-hero-val mono">
+            @if (team.usesFaab) {
+              ${{ team.faabRemaining }} FAAB
+            } @else {
+              Priority #{{ team.waiverPriority }}
+            }
+          </strong>
+          <span class="ch-team-hero-sub mono">{{ team.waiverMoves }} total moves</span>
+        </div>
+      </div>
+    </section>
+
+    @if (currentWeekMatchupRow(); as live) {
+      <section class="ch-card ch-stack live-strip">
+        <div class="ch-row-between detail-nav">
+          <div class="ch-flex-row">
+            <span
+              class="ch-chip mono"
+              [class.is-jade]="live.status === 'Live'"
+              [class.is-neutral]="live.status !== 'Live'"
+            >
+              Wk {{ live.week }} · {{ live.status }}
+            </span>
+
+            @if (live.oppName && live.oppRosterId) {
+              <span class="live-vs">
+                <strong>{{ team.teamName }}</strong>
+                <span class="muted">vs</span>
+                <a class="opp-link" [routerLink]="['/teams', live.oppRosterId]">{{ live.oppName }}</a>
+              </span>
+            } @else {
+              <span class="live-vs"><strong>Bye Week</strong></span>
+            }
+          </div>
+
+          <div class="ch-flex-row">
+            <span class="mono score-pair">
+              <strong>{{ live.myPoints.toFixed(2) }}</strong>
+              @if (live.oppPoints !== null) {
+                <span class="muted">– {{ live.oppPoints.toFixed(2) }}</span>
+              }
+            </span>
+
+            <a
+              class="ch-btn ch-btn-ghost is-compact"
+              [routerLink]="live.status === 'Live' ? '/watch-party' : '/matchups'"
+            >
+              {{ live.status === 'Live' ? 'Watch Party →' : 'Matchup →' }}
+            </a>
+          </div>
+        </div>
+
+        @if (live.oppPoints !== null && (live.myPoints > 0 || live.oppPoints > 0)) {
+          <div class="ch-bar-track">
+            <div class="ch-bar-fill" [style.width.%]="live.sharePct"></div>
+          </div>
+        }
+      </section>
+    }
+
+    @if (inspectedWeek(); as wk) {
+      <div class="ch-well inspect-banner">
+        <span class="mono">
+          Inspecting <strong>Week {{ wk }}</strong> · Chart bar, schedule row, and lineup synced.
+        </span>
+        <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="inspectWeek(null)">
+          Clear ×
+        </button>
+      </div>
+    }
+
+    <div class="ch-bento detail-grid">
+      <div class="span-7">
+        <app-team-points-chart
+          [scores]="team.weeklyScores"
+          [teamName]="team.teamName"
+          [selectedWeek]="inspectedWeek()"
+          (weekSelected)="inspectWeek($event)"
+        />
+      </div>
+
+      <div class="span-5 ch-stat-grid-2">
+        <section class="ch-card ch-stat-tile">
+          <div class="ch-row-between">
+            <span class="ch-overline">Schedule Luck</span>
+            <span
+              class="ch-chip mono"
+              [class.is-positive]="team.luckScore >= 0.4"
+              [class.is-negative]="team.luckScore <= -0.4"
+              [class.is-neutral]="team.luckScore > -0.4 && team.luckScore < 0.4"
+            >
+              {{ team.luckScore >= 0.4 ? 'Fortunate' : team.luckScore <= -0.4 ? 'Unlucky' : 'Balanced' }}
+            </span>
+          </div>
+          <strong class="stat-big mono">
+            {{ team.luckScore >= 0 ? '+' : '' }}{{ team.luckScore.toFixed(2) }}
+          </strong>
+          <p class="stat-caption">Actual wins compared to all-play expected wins.</p>
+          <span class="stat-sub mono">
+            Close games: {{ team.closeWins }}-{{ team.closeLosses }} (≤ 10 pts)
+          </span>
+        </section>
+
+        <section class="ch-card ch-stat-tile">
+          <div class="ch-row-between">
+            <span class="ch-overline">Bench Impact</span>
+            <span class="ch-chip is-neutral mono">{{ team.lineupEfficiencyPct.toFixed(0) }}% Eff</span>
+          </div>
+          <strong class="stat-big mono">{{ team.benchPointsTotal.toFixed(1) }} pts</strong>
+          <p class="stat-caption">Total bench points scored across completed weeks.</p>
+          <div class="ch-meter">
+            <div class="ch-meter-fill" [style.width.%]="team.lineupEfficiencyPct"></div>
+          </div>
+          <span class="stat-sub mono">
+            {{ avgBenchPoints(team) }} avg bench/wk
+          </span>
+        </section>
+
+        <section class="ch-card ch-stat-tile">
+          <div class="ch-row-between">
+            <span class="ch-overline">Ceiling &amp; Floor</span>
+            <span class="ch-chip is-neutral mono">{{ team.boomWeeks }} Boom Wks</span>
+          </div>
+          <div class="hi-lo-row">
+            @if (team.bestWeek; as best) {
+              <button
+                type="button"
+                class="ch-hi-lo-btn is-win"
+                (click)="inspectWeek(best.week)"
+                title="Inspect Week {{ best.week }} lineup"
+              >
+                <span class="hi-lo-lbl mono">Best · W{{ best.week }}</span>
+                <strong class="mono">{{ best.points.toFixed(1) }}</strong>
+              </button>
+            } @else {
+              <div class="ch-hi-lo-btn">
+                <span class="hi-lo-lbl mono">Best</span>
+                <strong class="mono">—</strong>
+              </div>
+            }
+
+            @if (team.worstWeek; as worst) {
+              <button
+                type="button"
+                class="ch-hi-lo-btn is-loss"
+                (click)="inspectWeek(worst.week)"
+                title="Inspect Week {{ worst.week }} lineup"
+              >
+                <span class="hi-lo-lbl mono">Low · W{{ worst.week }}</span>
+                <strong class="mono">{{ worst.points.toFixed(1) }}</strong>
+              </button>
+            } @else {
+              <div class="ch-hi-lo-btn">
+                <span class="hi-lo-lbl mono">Low</span>
+                <strong class="mono">—</strong>
+              </div>
+            }
+          </div>
+          <span class="stat-sub mono">
+            Median {{ team.medianScore.toFixed(1) }} · σ {{ team.stdDevScore.toFixed(1) }}
+          </span>
+        </section>
+
+        <section class="ch-card ch-stat-tile">
+          <div class="ch-row-between">
+            <span class="ch-overline">Roster Churn</span>
+            <span class="ch-chip is-neutral mono">{{ team.starterCount }} Start</span>
+          </div>
+          <strong class="stat-big mono">{{ team.waiverMoves }} moves</strong>
+          <p class="stat-caption">Waiver claims and free-agent acquisitions this season.</p>
+          <span class="stat-sub mono">
+            @if (team.usesFaab) {
+              ${{ team.faabRemaining }} FAAB remaining
+            } @else {
+              Priority #{{ team.waiverPriority }}
+            }
+          </span>
+        </section>
+      </div>
+
+      <div class="span-7">
+        <app-team-roster-table
+          [team]="team"
+          [selectedWeek]="inspectedWeek()"
+          (clearWeekRequested)="inspectWeek(null)"
+        />
+      </div>
+
+      <section class="ch-card ch-stack span-5 history-panel">
+        <div class="history-head">
+          <div class="ch-row-between">
+            <div>
+              <span class="ch-overline">Schedule Log</span>
+              <h2 class="ch-section-title">Weekly Results</h2>
+            </div>
+            <span class="ch-chip is-neutral mono">{{ team.recordLabel }}</span>
+          </div>
+          <span class="history-hint">Tap any week to load its starters</span>
+        </div>
+
+        @if (team.weeklyScores.length === 0 && !currentWeekMatchupRow()) {
+          <div class="ch-well empty-history">No weekly matchups logged yet.</div>
+        } @else {
+          <div class="ch-table-wrap ch-sticky-scroll">
+            <table class="ch-table history-table">
+              <thead>
+                <tr>
+                  <th>Wk</th>
+                  <th>Opponent</th>
+                  <th>Res</th>
+                  <th class="num">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of team.weeklyScores; track row.week) {
+                  <tr
+                    class="history-row"
+                    [class.is-selected-row]="inspectedWeek() === row.week"
+                    (click)="inspectWeek(row.week)"
+                  >
+                    <td class="mono">W{{ row.week }}</td>
+                    <td>
+                      @if (row.opponentRosterId && row.opponentName) {
+                        <a
+                          class="opp-link"
+                          [routerLink]="['/teams', row.opponentRosterId]"
+                          (click)="$event.stopPropagation()"
+                        >
+                          {{ row.opponentName }}
+                        </a>
+                      } @else {
+                        <span class="muted">Bye Week</span>
+                      }
+                    </td>
+                    <td>
+                      <span
+                        class="ch-chip mono"
+                        [class.is-positive]="row.result === 'W'"
+                        [class.is-negative]="row.result === 'L'"
+                        [class.is-neutral]="row.result !== 'W' && row.result !== 'L'"
+                      >
+                        {{ row.result }}
+                      </span>
+                    </td>
+                    <td class="num">
+                      <strong>{{ row.points.toFixed(1) }}</strong>
+                      @if (row.opponentPoints !== null) {
+                        <span class="opp-pts">– {{ row.opponentPoints.toFixed(1) }}</span>
+                      }
+                    </td>
+                  </tr>
+                }
+
+                @if (currentWeekMatchupRow(); as liveRow) {
+                  <tr>
+                    <td class="mono">W{{ liveRow.week }}</td>
+                    <td>
+                      @if (liveRow.oppRosterId && liveRow.oppName) {
+                        <a class="opp-link" [routerLink]="['/teams', liveRow.oppRosterId]">
+                          {{ liveRow.oppName }}
+                        </a>
+                      } @else {
+                        <span class="muted">Bye Week</span>
+                      }
+                    </td>
+                    <td>
+                      <span
+                        class="ch-chip mono"
+                        [class.is-jade]="liveRow.status === 'Live'"
+                        [class.is-neutral]="liveRow.status !== 'Live'"
+                      >
+                        {{ liveRow.status }}
+                      </span>
+                    </td>
+                    <td class="num">
+                      <strong>{{ liveRow.myPoints.toFixed(1) }}</strong>
+                      @if (liveRow.oppPoints !== null) {
+                        <span class="opp-pts">– {{ liveRow.oppPoints.toFixed(1) }}</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</div>

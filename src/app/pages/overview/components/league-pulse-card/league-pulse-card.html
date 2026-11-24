@@ -1,0 +1,26 @@
+<section class="ch-card pulse-card">
+  <div class="pulse-header">
+    <div>
+      <span class="ch-overline">League Pulse</span>
+      <h2 class="ch-section-title">Season Benchmarks</h2>
+    </div>
+    <a class="full-link" routerLink="/insights">What-Ifs →</a>
+  </div>
+
+  @if (insights().length === 0) {
+    <div class="ch-well empty-pulse">
+      Insights unlock once at least one week of matchups is scored.
+    </div>
+  } @else {
+    <div class="pulse-grid">
+      @for (item of insights(); track item.id) {
+        <a class="ch-well pulse-tile" [routerLink]="['/teams', item.rosterId]">
+          <span class="pulse-label">{{ item.label }}</span>
+          <span class="pulse-stat mono">{{ item.stat }}</span>
+          <span class="pulse-team">{{ item.teamName }}</span>
+          <span class="pulse-context">{{ item.context }}</span>
+        </a>
+      }
+    </div>
+  }
+</section>

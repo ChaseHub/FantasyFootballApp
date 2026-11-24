@@ -1,0 +1,161 @@
+<div class="ch-page ch-stack about-page ch-enter">
+  <app-page-header
+    overline="Analytics Field Guide"
+    title="How Clubhouse Metrics Work"
+    context="Plain-English formulas, real examples, and direct shortcuts to every simulation and analytics model in the app."
+    mobileContext="Formulas, examples &amp; analytics shortcuts"
+    [meta]="filteredTopicsCountLabel()"
+  >
+    <a class="ch-btn ch-btn-secondary is-compact" routerLink="/">Back to Hub</a>
+  </app-page-header>
+
+  <section class="ch-feature ch-stack about-hero">
+    <div class="ch-row-between hero-head">
+      <div>
+        <span class="ch-overline on-dark">Quick Reference</span>
+        <h2 class="hero-title">Core Concepts at a Glance</h2>
+      </div>
+      <span class="ch-chip is-signal mono">{{ filteredTopics().length }} Topics</span>
+    </div>
+
+    <p class="hero-copy">
+      Clubhouse goes beyond raw W–L records to separate roster talent from schedule luck. Tap any card below to jump straight to its full breakdown.
+    </p>
+
+    <div class="ch-stat-strip-4 hero-rail">
+      <button
+        type="button"
+        class="ch-feature-tile hero-card-btn"
+        (click)="focusTopic('all-play', 'allplay')"
+      >
+        <span class="ch-team-hero-stat">Schedule-Free</span>
+        <strong class="ch-team-hero-val is-signal">All-Play %</strong>
+        <span class="ch-team-hero-sub">Record vs everyone weekly</span>
+      </button>
+
+      <button
+        type="button"
+        class="ch-feature-tile hero-card-btn"
+        (click)="focusTopic('expected-wins', 'allplay')"
+      >
+        <span class="ch-team-hero-stat">Deserved Win Total</span>
+        <strong class="ch-team-hero-val">Expected Wins</strong>
+        <span class="ch-team-hero-sub">Sum of weekly win shares</span>
+      </button>
+
+      <button
+        type="button"
+        class="ch-feature-tile hero-card-btn"
+        (click)="focusTopic('schedule-luck', 'allplay')"
+      >
+        <span class="ch-team-hero-stat">Actual − Expected</span>
+        <strong class="ch-team-hero-val is-signal">Schedule Luck</strong>
+        <span class="ch-team-hero-sub">Fortunate vs Unlucky flag</span>
+      </button>
+
+      <button
+        type="button"
+        class="ch-feature-tile hero-card-btn"
+        (click)="focusTopic('power-score', 'power')"
+      >
+        <span class="ch-team-hero-stat">35 / 35 / 30 Model</span>
+        <strong class="ch-team-hero-val">Power Score</strong>
+        <span class="ch-team-hero-sub">True contender rating</span>
+      </button>
+    </div>
+  </section>
+
+  <app-filter-bar
+    [searchQuery]="searchQuery()"
+    searchPlaceholder="Search formulas, luck, WAR, all-play…"
+    [activeFilterCount]="activeFilterCount()"
+    sheetTitle="Filter Metric Topics"
+    [resultLabel]="filteredTopicsCountLabel()"
+    (searchQueryChange)="searchQuery.set($event)"
+    (clearAll)="clearFilters()"
+  >
+    <div class="ch-segmented topic-cats" role="tablist" aria-label="Guide category">
+      @for (cat of categories; track cat.id) {
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="activeCategory() === cat.id"
+          (click)="setCategory(cat.id)"
+        >
+          {{ cat.label }}
+        </button>
+      }
+    </div>
+  </app-filter-bar>
+
+  @if (filteredTopics().length === 0) {
+    <section class="ch-card ch-empty-state">
+      <h2 class="ch-section-title">No matching guide entries</h2>
+      <p>Try clearing the search bar or switching back to All Concepts.</p>
+    </section>
+  } @else {
+    <div class="ch-bento guide-grid">
+      @for (topic of filteredTopics(); track topic.id) {
+        @let expanded = isTopicExpanded(topic.id);
+        <article [id]="'topic-' + topic.id" class="ch-card ch-stack span-6 guide-card">
+          <div class="ch-row-between guide-card-top">
+            <span class="ch-overline">{{ topic.categoryLabel }}</span>
+            <span class="ch-chip is-jade">{{ topic.badge }}</span>
+          </div>
+
+          <h3 class="guide-title">{{ topic.title }}</h3>
+          <p class="guide-summary">{{ topic.summary }}</p>
+
+          <button
+            type="button"
+            class="ch-btn ch-btn-ghost is-compact disclosure-toggle"
+            [attr.aria-expanded]="expanded"
+            (click)="toggleTopicDetails(topic.id)"
+          >
+            <span>{{ expanded ? 'Hide Formula & Example' : 'Formula & Example' }}</span>
+            <span class="mono">{{ expanded ? '−' : '+' }}</span>
+          </button>
+
+          <div class="ch-stack guide-deep" [class.is-open]="expanded">
+            <div class="ch-well ch-stack detail-well">
+              <span class="well-label">How It Works</span>
+              <p class="well-copy">{{ topic.formula }}</p>
+            </div>
+
+            <div class="ch-stack example-box">
+              <span class="well-label">Simple Example</span>
+              <p class="example-copy">{{ topic.example }}</p>
+            </div>
+          </div>
+
+          <div class="ch-row-between guide-foot">
+            <span class="where-kicker">See it live:</span>
+            <a
+              class="where-link"
+              [routerLink]="topic.route"
+              [queryParams]="topic.queryParams"
+            >
+              {{ topic.whereLabel }} →
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <section class="ch-card ch-row-between sources-card">
+    <div class="ch-stack sources-copy">
+      <span class="ch-overline">Data Pipeline &amp; Privacy</span>
+      <strong class="sources-title">Read-Only League Companion · Offline-Ready PWA</strong>
+      <p class="sources-body">
+        The Clubhouse never asks for Sleeper passwords or modifies league settings — it only reads public league endpoints alongside live NFL scoreboards, stores your saved league IDs locally in your browser, and supports home-screen installation via PWA service worker caching.
+      </p>
+    </div>
+
+    <div class="ch-flex-row source-links">
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">League History</a>
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/standings">Standings</a>
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/players">Players</a>
+    </div>
+  </section>
+</div>

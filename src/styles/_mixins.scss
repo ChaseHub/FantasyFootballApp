@@ -1,0 +1,95 @@
+@use 'sass:map';
+
+$breakpoints: (
+  sm: 480px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+  '2xl': 1680px,
+);
+
+/// Mobile-first media query helper (`base` < 768px -> progressive `min-width`).
+@mixin mq($bp) {
+  $width: map.get($breakpoints, $bp);
+  @if $width == null {
+    @error "Unknown breakpoint `#{$bp}`. Expected one of: sm, md, lg, xl, 2xl.";
+  }
+  @media (min-width: $width) {
+    @content;
+  }
+}
+
+/// Strict phone-only helper (use sparingly for dual mobile-card / desktop-table visibility).
+@mixin mq-only-mobile {
+  @media (max-width: 767.98px) {
+    @content;
+  }
+}
+
+/// Strict below-lg helper (phones + portrait tablets).
+@mixin mq-below-lg {
+  @media (max-width: 1023.98px) {
+    @content;
+  }
+}
+
+/// CSS Container Query helper for span-adaptive cards and panels.
+@mixin cq($min-width, $name: null) {
+  @if $name != null {
+    @container #{$name} (min-width: #{$min-width}) {
+      @content;
+    }
+  } @else {
+    @container (min-width: #{$min-width}) {
+      @content;
+    }
+  }
+}
+
+@mixin focus-ring($offset: 2px) {
+  outline: 2px solid var(--jade);
+  outline-offset: $offset;
+}
+
+@mixin touch-target($min: 44px) {
+  min-height: $min;
+  min-width: $min;
+}
+
+@mixin stack($gap: var(--space-3)) {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+@mixin row($gap: var(--space-2), $align: center, $justify: flex-start, $wrap: nowrap) {
+  display: flex;
+  align-items: $align;
+  justify-content: $justify;
+  gap: $gap;
+  flex-wrap: $wrap;
+}
+
+@mixin hide-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@mixin scroll-rail($gap: var(--space-3)) {
+  display: flex;
+  align-items: stretch;
+  gap: $gap;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  @include hide-scrollbar;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,917 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack trades-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 220px; height: 34px;"></span>
+      <span class="ch-skeleton" style="width: 260px; height: 38px;"></span>
+    </header>
+    <span class="ch-skeleton-dark" style="height: 150px;"></span>
+    <div class="ch-bento">
+      <div class="ch-card span-8"><span class="ch-skeleton" style="height: 260px;"></span></div>
+      <div class="ch-card span-4"><span class="ch-skeleton" style="height: 260px;"></span></div>
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack trades-page ch-enter">
+    <app-page-header
+      [overline]="'Front Office Ledger · ' + data.league.season"
+      title="Trading & Moves"
+      [context]="'Completed deals, waiver claims, FAAB spend, and draft capital across ' + data.league.name + '.'"
+      [mobileContext]="data.league.name + ' · Deals, Waivers & Sandbox'"
+    >
+      <div class="ch-segmented" role="tablist" aria-label="Transaction view">
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="activeTab() === 'trades'"
+          (click)="setTab('trades')"
+        >
+          Trades ({{ filteredTrades().length }})
+        </button>
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="activeTab() === 'moves'"
+          (click)="setTab('moves')"
+        >
+          Waivers &amp; FA ({{ filteredMoves().length }})
+        </button>
+        @if (tradedPicks().length > 0) {
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="activeTab() === 'picks'"
+            (click)="setTab('picks')"
+          >
+            Draft Picks ({{ filteredPicks().length }})
+          </button>
+        }
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="activeTab() === 'sandbox'"
+          (click)="setTab('sandbox')"
+        >
+          Trade Sandbox
+        </button>
+      </div>
+    </app-page-header>
+
+    @let summary = ledgerSummary();
+    <section class="ch-feature ch-stack trades-hero">
+      <div class="ch-row-between hero-head">
+        <div>
+          <span class="ch-overline on-dark">Season Transaction Pulse · Week {{ data.currentWeek }}</span>
+          <h2 class="hero-title">League Market Overview</h2>
+        </div>
+
+        @if (summary.topTrader; as top) {
+          <button
+            type="button"
+            class="ch-btn ch-btn-ghost hero-filter-pill"
+            (click)="toggleTeamFilter(top.rosterId)"
+          >
+            Most Active: {{ top.teamName }} ({{ top.count }} deal{{ top.count > 1 ? 's' : '' }})
+          </button>
+        }
+      </div>
+
+      <div class="ch-stat-strip-4">
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">Completed Trades</span>
+          <strong class="ch-team-hero-val mono signal-num">{{ summary.totalTrades }}</strong>
+          <span class="ch-team-hero-sub mono">
+            {{ summary.playersMoved }} players · {{ summary.picksMoved }} picks moved
+          </span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">Waivers &amp; FA</span>
+          <strong class="ch-team-hero-val mono">{{ summary.totalMoves }}</strong>
+          <span class="ch-team-hero-sub mono">
+            {{ summary.waiverCount }} claims · {{ summary.faCount }} free agents
+          </span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">
+            {{ summary.usesFaab ? 'FAAB Spent' : 'Trade Assets' }}
+          </span>
+          <strong class="ch-team-hero-val mono">
+            @if (summary.usesFaab) {
+              ${{ summary.faabSpentLeague }}
+            } @else {
+              {{ summary.playersMoved + summary.picksMoved }}
+            }
+          </strong>
+          <span class="ch-team-hero-sub mono">
+            @if (summary.topBid; as bid) {
+              Top bid ${{ bid.amount }} · {{ bid.playerName }}
+            } @else if (summary.faabTraded > 0) {
+              ${{ summary.faabTraded }} FAAB traded in deals
+            } @else {
+              Priority waiver league
+            }
+          </span>
+        </div>
+
+        <div class="ch-feature-tile">
+          <span class="ch-team-hero-stat">
+            {{ tradedPicks().length > 0 ? 'Traded Picks' : 'Most Active Wire' }}
+          </span>
+          <strong class="ch-team-hero-val mono">
+            @if (tradedPicks().length > 0) {
+              {{ tradedPicks().length }}
+            } @else if (summary.mostActiveMover; as mover) {
+              {{ mover.waiverMoves }} Moves
+            } @else {
+              0 Moves
+            }
+          </strong>
+          <span class="ch-team-hero-sub mono">
+            @if (tradedPicks().length > 0) {
+              @if (summary.topCollector; as col) {
+                Leader: {{ col.teamName }} ({{ col.net >= 0 ? '+' : '' }}{{ col.net }})
+              } @else {
+                Active future pick market
+              }
+            } @else if (summary.mostActiveMover; as mover) {
+              {{ mover.teamName }} leads roster churn
+            } @else {
+              No transactions logged yet
+            }
+          </span>
+        </div>
+      </div>
+    </section>
+
+    @if (activeTab() === 'sandbox') {
+      @if (sandboxEval(); as sb) {
+        <section class="ch-stack sandbox-wrap">
+          <section class="ch-card ch-stack sandbox-verdict-card">
+            <div class="ch-row-between sandbox-verdict-head">
+              <div>
+                <span class="ch-overline">Live Trade Evaluator</span>
+                <h2 class="ch-section-title">Package Balance &amp; Starter Impact</h2>
+              </div>
+              <div class="ch-flex-row">
+                <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="swapSandboxSides()">
+                  Swap ↔
+                </button>
+                <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="resetSandbox()">
+                  Clear
+                </button>
+                <button type="button" class="ch-btn ch-btn-primary is-compact" (click)="copySandboxProposal()">
+                  Copy Proposal ↗
+                </button>
+              </div>
+            </div>
+
+            <div class="ch-well verdict-banner" [attr.data-verdict]="sb.verdictKind">
+              <div class="ch-row-between verdict-row">
+                <div>
+                  <span class="ch-overline">Trade Verdict</span>
+                  <strong class="verdict-title">{{ sb.verdictHeadline }}</strong>
+                </div>
+                <span class="ch-chip mono" [class.is-jade]="sb.verdictKind !== 'idle'" [class.is-neutral]="sb.verdictKind === 'idle'">
+                  Diff: {{ sb.packagePpgDiff >= 0 ? '+' : '' }}{{ sb.packagePpgDiff.toFixed(1) }} PPG
+                </span>
+              </div>
+              <p class="verdict-sub">{{ sb.verdictDetail }}</p>
+            </div>
+
+            <div class="sandbox-summary-grid">
+              <div class="ch-well ch-stack sandbox-kpi">
+                <div class="ch-row-between">
+                  <span class="ch-overline">{{ sb.teamA.teamName }} Gets</span>
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="sb.starterDeltaA > 0.2"
+                    [class.is-negative]="sb.starterDeltaA < -0.2"
+                    [class.is-neutral]="sb.starterDeltaA >= -0.2 && sb.starterDeltaA <= 0.2"
+                  >
+                    Starters {{ sb.starterDeltaA >= 0 ? '+' : '' }}{{ sb.starterDeltaA.toFixed(1) }}
+                  </span>
+                </div>
+                <strong class="sandbox-kpi-val mono">
+                  {{ sb.ppgSendB.toFixed(1) }} PPG
+                  <span class="kpi-season">({{ sb.seasonSendB.toFixed(0) }} tot)</span>
+                </strong>
+                <span class="sandbox-kpi-sub">
+                  Lineup: <span class="mono">{{ sb.starterBeforeA.toFixed(1) }} → {{ sb.starterAfterA.toFixed(1) }}</span>
+                </span>
+                @if (sb.sendingB.length > 0 || sandboxFaabB() > 0) {
+                  <div class="ch-flex-row receive-chips">
+                    @for (p of sb.sendingB; track p.playerId) {
+                      <button type="button" class="ch-chip is-jade filter-chip" (click)="toggleSandboxPlayer('B', p.playerId)">
+                        {{ p.name }} ({{ p.avgPoints.toFixed(1) }}) ×
+                      </button>
+                    }
+                    @if (sandboxFaabB() > 0) {
+                      <span class="ch-chip is-neutral mono">${{ sandboxFaabB() }} FAAB</span>
+                    }
+                  </div>
+                }
+                <div class="pos-delta-pills mono">
+                  @for (d of sb.deltaA; track d.pos) {
+                    <span
+                      class="ch-chip mono"
+                      [class.is-positive]="d.delta > 0"
+                      [class.is-negative]="d.delta < 0"
+                      [class.is-neutral]="d.delta === 0"
+                    >
+                      {{ d.pos }} {{ d.delta >= 0 ? '+' : '' }}{{ d.delta.toFixed(1) }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <div class="ch-well ch-stack sandbox-kpi">
+                <div class="ch-row-between">
+                  <span class="ch-overline">{{ sb.teamB.teamName }} Gets</span>
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="sb.starterDeltaB > 0.2"
+                    [class.is-negative]="sb.starterDeltaB < -0.2"
+                    [class.is-neutral]="sb.starterDeltaB >= -0.2 && sb.starterDeltaB <= 0.2"
+                  >
+                    Starters {{ sb.starterDeltaB >= 0 ? '+' : '' }}{{ sb.starterDeltaB.toFixed(1) }}
+                  </span>
+                </div>
+                <strong class="sandbox-kpi-val mono">
+                  {{ sb.ppgSendA.toFixed(1) }} PPG
+                  <span class="kpi-season">({{ sb.seasonSendA.toFixed(0) }} tot)</span>
+                </strong>
+                <span class="sandbox-kpi-sub">
+                  Lineup: <span class="mono">{{ sb.starterBeforeB.toFixed(1) }} → {{ sb.starterAfterB.toFixed(1) }}</span>
+                </span>
+                @if (sb.sendingA.length > 0 || sandboxFaabA() > 0) {
+                  <div class="ch-flex-row receive-chips">
+                    @for (p of sb.sendingA; track p.playerId) {
+                      <button type="button" class="ch-chip is-jade filter-chip" (click)="toggleSandboxPlayer('A', p.playerId)">
+                        {{ p.name }} ({{ p.avgPoints.toFixed(1) }}) ×
+                      </button>
+                    }
+                    @if (sandboxFaabA() > 0) {
+                      <span class="ch-chip is-neutral mono">${{ sandboxFaabA() }} FAAB</span>
+                    }
+                  </div>
+                }
+                <div class="pos-delta-pills mono">
+                  @for (d of sb.deltaB; track d.pos) {
+                    <span
+                      class="ch-chip mono"
+                      [class.is-positive]="d.delta > 0"
+                      [class.is-negative]="d.delta < 0"
+                      [class.is-neutral]="d.delta === 0"
+                    >
+                      {{ d.pos }} {{ d.delta >= 0 ? '+' : '' }}{{ d.delta.toFixed(1) }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="sandbox-cols">
+            <section class="ch-card ch-stack sandbox-roster-panel">
+              <div class="ch-row-between sandbox-roster-head">
+                <div>
+                  <span class="ch-overline">Side A Sends ({{ filteredRosterA().length }})</span>
+                  <h3 class="ch-section-title">{{ sb.teamA.teamName }}</h3>
+                </div>
+                <app-picker
+                  [options]="sandboxTeamOptionsA()"
+                  [value]="sb.teamA.rosterId"
+                  [compact]="true"
+                  [searchable]="true"
+                  ariaLabel="Select Side A Team"
+                  sheetTitle="Select Side A Franchise"
+                  (valueChange)="onSandboxTeamASelect($event)"
+                />
+              </div>
+
+              <div class="ch-row-between sandbox-filter-bar">
+                <div class="ch-flex-row">
+                  @for (pos of posChoices; track pos) {
+                    <button
+                      type="button"
+                      class="ch-chip filter-chip mono"
+                      [class.is-jade]="sandboxPosA() === pos"
+                      [class.is-neutral]="sandboxPosA() !== pos"
+                      (click)="sandboxPosA.set(pos)"
+                    >
+                      {{ pos }}
+                    </button>
+                  }
+                </div>
+                @if (sb.teamA.usesFaab) {
+                  <label class="faab-inline mono">
+                    FAAB $
+                    <input
+                      class="ch-input faab-num"
+                      type="number"
+                      min="0"
+                      [max]="sb.teamA.faabRemaining"
+                      [value]="sandboxFaabA()"
+                      (input)="onSandboxFaabChange('A', $event)"
+                    />
+                  </label>
+                }
+              </div>
+
+              <div class="ch-stack sandbox-player-list">
+                @for (p of filteredRosterA(); track p.playerId) {
+                  <button
+                    type="button"
+                    class="sandbox-player-btn"
+                    [class.is-picked]="isSandboxSelected('A', p.playerId)"
+                    (click)="toggleSandboxPlayer('A', p.playerId)"
+                  >
+                    <div class="ch-flex-row">
+                      <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                      <strong>{{ p.name }}</strong>
+                      <span class="asset-team mono">{{ p.nflTeam }} · {{ p.role }}</span>
+                    </div>
+                    <span class="mono asset-pts">
+                      {{ p.avgPoints.toFixed(1) }} PPG
+                      <span class="muted-sub">({{ p.seasonPoints.toFixed(0) }})</span>
+                    </span>
+                  </button>
+                }
+              </div>
+            </section>
+
+            <section class="ch-card ch-stack sandbox-roster-panel">
+              <div class="ch-row-between sandbox-roster-head">
+                <div>
+                  <span class="ch-overline">Side B Sends ({{ filteredRosterB().length }})</span>
+                  <h3 class="ch-section-title">{{ sb.teamB.teamName }}</h3>
+                </div>
+                <app-picker
+                  [options]="sandboxTeamOptionsB()"
+                  [value]="sb.teamB.rosterId"
+                  [compact]="true"
+                  [searchable]="true"
+                  ariaLabel="Select Side B Team"
+                  sheetTitle="Select Side B Franchise"
+                  (valueChange)="onSandboxTeamBSelect($event)"
+                />
+              </div>
+
+              <div class="ch-row-between sandbox-filter-bar">
+                <div class="ch-flex-row">
+                  @for (pos of posChoices; track pos) {
+                    <button
+                      type="button"
+                      class="ch-chip filter-chip mono"
+                      [class.is-jade]="sandboxPosB() === pos"
+                      [class.is-neutral]="sandboxPosB() !== pos"
+                      (click)="sandboxPosB.set(pos)"
+                    >
+                      {{ pos }}
+                    </button>
+                  }
+                </div>
+                @if (sb.teamB.usesFaab) {
+                  <label class="faab-inline mono">
+                    FAAB $
+                    <input
+                      class="ch-input faab-num"
+                      type="number"
+                      min="0"
+                      [max]="sb.teamB.faabRemaining"
+                      [value]="sandboxFaabB()"
+                      (input)="onSandboxFaabChange('B', $event)"
+                    />
+                  </label>
+                }
+              </div>
+
+              <div class="ch-stack sandbox-player-list">
+                @for (p of filteredRosterB(); track p.playerId) {
+                  <button
+                    type="button"
+                    class="sandbox-player-btn"
+                    [class.is-picked]="isSandboxSelected('B', p.playerId)"
+                    (click)="toggleSandboxPlayer('B', p.playerId)"
+                  >
+                    <div class="ch-flex-row">
+                      <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                      <strong>{{ p.name }}</strong>
+                      <span class="asset-team mono">{{ p.nflTeam }} · {{ p.role }}</span>
+                    </div>
+                    <span class="mono asset-pts">
+                      {{ p.avgPoints.toFixed(1) }} PPG
+                      <span class="muted-sub">({{ p.seasonPoints.toFixed(0) }})</span>
+                    </span>
+                  </button>
+                }
+              </div>
+            </section>
+          </div>
+        </section>
+      } @else {
+        <section class="ch-card empty-panel">Need at least two league franchises loaded to simulate trades.</section>
+      }
+    } @else {
+      <app-filter-bar
+        [searchQuery]="searchQuery()"
+        searchPlaceholder="Search player, team, or round..."
+        [activeFilterCount]="activeFilterCount()"
+        sheetTitle="Filter Ledger"
+        (searchQueryChange)="searchQuery.set($event)"
+        (clearAll)="clearFilters()"
+      >
+        <app-picker
+          [options]="teamFilterOptions()"
+          [value]="selectedRosterFilter()"
+          [compact]="true"
+          [searchable]="true"
+          ariaLabel="Filter by franchise"
+          sheetTitle="Filter by Franchise"
+          (valueChange)="selectedRosterFilter.set($event)"
+        />
+
+        @if (sleeper.myTeam(); as mine) {
+          <button
+            type="button"
+            class="ch-chip filter-chip"
+            [class.is-jade]="selectedRosterFilter() === mine.rosterId"
+            [class.is-neutral]="selectedRosterFilter() !== mine.rosterId"
+            (click)="toggleMyTeamFilter()"
+          >
+            My Team
+          </button>
+        }
+
+        @if (activeTab() === 'moves') {
+          <div class="ch-flex-row">
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="moveKindFilter() === 'all'"
+              [class.is-neutral]="moveKindFilter() !== 'all'"
+              (click)="setMoveKindFilter('all')"
+            >
+              All Types
+            </button>
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="moveKindFilter() === 'waiver'"
+              [class.is-neutral]="moveKindFilter() !== 'waiver'"
+              (click)="setMoveKindFilter('waiver')"
+            >
+              Waivers
+            </button>
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="moveKindFilter() === 'free_agent'"
+              [class.is-neutral]="moveKindFilter() !== 'free_agent'"
+              (click)="setMoveKindFilter('free_agent')"
+            >
+              Free Agents
+            </button>
+            @if (summary.usesFaab) {
+              <button
+                type="button"
+                class="ch-chip filter-chip"
+                [class.is-jade]="moveKindFilter() === 'bids'"
+                [class.is-neutral]="moveKindFilter() !== 'bids'"
+                (click)="setMoveKindFilter('bids')"
+              >
+                $ Bids Only
+              </button>
+            }
+          </div>
+        }
+
+        @if (hasActiveFilters()) {
+          <button type="button" class="ch-btn ch-btn-ghost reset-btn ch-desktop-only" (click)="clearFilters()">
+            Reset ×
+          </button>
+        }
+      </app-filter-bar>
+
+      <div class="ch-bento main-layout">
+        <div class="span-8 feed-col">
+          @if (activeTab() === 'trades') {
+            @if (filteredTrades().length === 0) {
+              <section class="ch-card empty-panel">
+                <h3 class="ch-card-title">No trades match these filters</h3>
+                <p class="empty-copy">
+                  @if (hasActiveFilters()) {
+                    Clear the team or search filter to inspect every completed deal.
+                  } @else {
+                    No completed trades have been processed yet. Check <strong>Waivers &amp; FA</strong>
+                    for roster moves.
+                  }
+                </p>
+              </section>
+            } @else {
+              <div class="ch-stack trade-feed">
+                @for (trade of filteredTrades(); track trade.transactionId) {
+                  <article class="ch-card ch-stack trade-card">
+                    <div class="ch-row-between trade-meta">
+                      <div class="ch-flex-row">
+                        <span class="ch-chip is-jade mono">Week {{ trade.week }}</span>
+                        <span class="ch-chip is-neutral">
+                          {{ trade.sides.length }}-Team Deal
+                        </span>
+                      </div>
+                      <span class="trade-date mono">{{ trade.dateLabel }}</span>
+                    </div>
+
+                    <div class="trade-sides">
+                      @for (side of trade.sides; track side.rosterId) {
+                        @let pkgPts = sidePlayerPoints(side);
+                        <div
+                          class="ch-well ch-stack trade-side"
+                          [class.is-focus-side]="selectedRosterFilter() === side.rosterId"
+                        >
+                          <div class="ch-row-between">
+                            <a class="side-header" [routerLink]="['/teams', side.rosterId]">
+                              <span class="ch-avatar sz-32">
+                                @if (side.avatarUrl) {
+                                  <img [src]="side.avatarUrl" [alt]="side.teamName" />
+                                } @else {
+                                  {{ side.initials }}
+                                }
+                              </span>
+                              <div class="ch-stack">
+                                <span class="side-team">{{ side.teamName }}</span>
+                                <span class="side-mgr">{{ side.managerName }} receives</span>
+                              </div>
+                            </a>
+
+                            @if (pkgPts > 0) {
+                              <span class="ch-chip is-neutral mono" title="Season points by received players">
+                                {{ pkgPts.toFixed(1) }} pts
+                              </span>
+                            }
+                          </div>
+
+                          <ul class="asset-list">
+                            @for (p of side.playersReceived; track p.playerId) {
+                              <li class="asset-item">
+                                <span class="asset-main">
+                                  <span class="ch-pos-pill mono" [attr.data-pos]="p.position">
+                                    {{ p.position }}
+                                  </span>
+                                  <a
+                                    class="asset-name ch-player-link"
+                                    [routerLink]="['/players']"
+                                    [queryParams]="{ player: p.playerId }"
+                                  >
+                                    {{ p.name }}
+                                  </a>
+                                  <span class="asset-team mono">{{ p.nflTeam }}</span>
+                                </span>
+                                <span class="asset-pts mono">
+                                  {{ p.seasonPoints > 0 ? p.seasonPoints.toFixed(1) + ' pts' : '—' }}
+                                </span>
+                              </li>
+                            }
+
+                            @for (pk of side.picksReceived; track $index) {
+                              <li class="asset-item">
+                                <span class="asset-main">
+                                  <span class="ch-pos-pill mono">PICK</span>
+                                  <span class="asset-name">{{ pk.season }} Round {{ pk.round }}</span>
+                                </span>
+                                <span class="asset-pts">via {{ pk.originalTeamName }}</span>
+                              </li>
+                            }
+
+                            @if (side.faabReceived > 0) {
+                              <li class="asset-item">
+                                <span class="asset-main">
+                                  <span class="ch-pos-pill mono">FAAB</span>
+                                  <span class="asset-name">${{ side.faabReceived }} Waiver Budget</span>
+                                </span>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          } @else if (activeTab() === 'moves') {
+            <section class="ch-card table-card">
+              <div class="ch-row-between panel-head">
+                <div>
+                  <span class="ch-overline">Transaction Wire</span>
+                  <h2 class="ch-section-title">Waiver Claims &amp; Free Agents</h2>
+                </div>
+                <span class="ch-chip is-neutral mono">{{ filteredMoves().length }} shown</span>
+              </div>
+
+              @if (filteredMoves().length === 0) {
+                <div class="empty-panel">No waiver or free-agent moves match your filters.</div>
+              } @else {
+                <!-- Mobile Move Story Cards -->
+                <div class="ch-mobile-feed mobile-card-pad">
+                  @for (mv of filteredMoves(); track mv.transactionId) {
+                    <div class="ch-data-card">
+                      <div class="ch-row-between">
+                        <div class="ch-flex-row">
+                          <span class="mono muted-col">W{{ mv.week }}</span>
+                          <span class="ch-chip" [class.is-jade]="mv.type === 'waiver'" [class.is-neutral]="mv.type !== 'waiver'">
+                            {{ mv.type === 'waiver' ? 'Waiver' : 'FA' }}
+                          </span>
+                          <a class="team-link" [routerLink]="['/teams', mv.rosterId]">{{ mv.teamName }}</a>
+                        </div>
+                        @if (mv.waiverBid !== null && mv.waiverBid > 0) {
+                          <span class="ch-chip is-jade mono">${{ mv.waiverBid }}</span>
+                        }
+                      </div>
+
+                      <div class="move-card-lines">
+                        @for (p of mv.addedPlayers; track p.playerId) {
+                          <div class="ch-flex-row">
+                            <span class="move-add mono">+</span>
+                            <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                            <a class="move-add" [routerLink]="['/players']" [queryParams]="{ player: p.playerId }">{{ p.name }}</a>
+                          </div>
+                        }
+                        @for (p of mv.droppedPlayers; track p.playerId) {
+                          <div class="ch-flex-row">
+                            <span class="move-drop mono">−</span>
+                            <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                            <span class="move-drop">{{ p.name }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Desktop Table -->
+                <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+                  <table class="ch-table moves-table">
+                    <thead>
+                      <tr>
+                        <th>Wk</th>
+                        <th>Type</th>
+                        <th>Franchise</th>
+                        <th>Added</th>
+                        <th>Dropped</th>
+                        <th class="num">Bid</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (mv of filteredMoves(); track mv.transactionId) {
+                        <tr>
+                          <td>
+                            <div class="ch-stack">
+                              <span class="mono">W{{ mv.week }}</span>
+                              <span class="move-date mono">{{ mv.dateLabel }}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              class="ch-chip"
+                              [class.is-jade]="mv.type === 'waiver'"
+                              [class.is-neutral]="mv.type !== 'waiver'"
+                            >
+                              {{ mv.type === 'waiver' ? 'Waiver' : 'FA' }}
+                            </span>
+                          </td>
+                          <td>
+                            <a class="team-link" [routerLink]="['/teams', mv.rosterId]">
+                              {{ mv.teamName }}
+                            </a>
+                          </td>
+                          <td>
+                            @if (mv.addedPlayers.length > 0) {
+                              <div class="ch-stack move-players">
+                                @for (p of mv.addedPlayers; track p.playerId) {
+                                  <span class="ch-flex-row">
+                                    <span class="ch-pos-pill mono" [attr.data-pos]="p.position">
+                                      {{ p.position }}
+                                    </span>
+                                    <a
+                                      class="move-add"
+                                      [routerLink]="['/players']"
+                                      [queryParams]="{ player: p.playerId }"
+                                    >
+                                      {{ p.name }}
+                                    </a>
+                                  </span>
+                                }
+                              </div>
+                            } @else {
+                              <span class="muted-col">—</span>
+                            }
+                          </td>
+                          <td>
+                            @if (mv.droppedPlayers.length > 0) {
+                              <div class="ch-stack move-players">
+                                @for (p of mv.droppedPlayers; track p.playerId) {
+                                  <span class="ch-flex-row">
+                                    <span class="ch-pos-pill mono" [attr.data-pos]="p.position">
+                                      {{ p.position }}
+                                    </span>
+                                    <span class="move-drop">{{ p.name }}</span>
+                                  </span>
+                                }
+                              </div>
+                            } @else {
+                              <span class="muted-col">—</span>
+                            }
+                          </td>
+                          <td class="num mono">
+                            @if (mv.waiverBid !== null && mv.waiverBid > 0) {
+                              <span class="ch-chip is-jade">${{ mv.waiverBid }}</span>
+                            } @else if (mv.waiverBid === 0) {
+                              <span class="muted-col">$0</span>
+                            } @else {
+                              <span class="muted-col">—</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+          } @else {
+            <div class="ch-stack picks-col">
+              @if (pickBalances().length > 0) {
+                <section class="ch-card balance-card">
+                  <div class="ch-row-between">
+                    <div>
+                      <span class="ch-overline">Draft Capital Ledger</span>
+                      <h2 class="ch-section-title">Net Traded Picks by Team</h2>
+                    </div>
+                    <span class="balance-hint">Tap to filter</span>
+                  </div>
+
+                  <div class="ch-flex-row balance-pills">
+                    @for (bal of pickBalances(); track bal.rosterId) {
+                      <button
+                        type="button"
+                        class="ch-chip balance-btn mono"
+                        [class.is-jade]="selectedRosterFilter() === bal.rosterId"
+                        [class.is-positive]="selectedRosterFilter() !== bal.rosterId && bal.net > 0"
+                        [class.is-negative]="selectedRosterFilter() !== bal.rosterId && bal.net < 0"
+                        [class.is-neutral]="selectedRosterFilter() !== bal.rosterId && bal.net === 0"
+                        (click)="toggleTeamFilter(bal.rosterId)"
+                      >
+                        {{ bal.teamName }} {{ bal.net > 0 ? '+' : '' }}{{ bal.net }}
+                      </button>
+                    }
+                  </div>
+                </section>
+              }
+
+              <section class="ch-card table-card">
+                <div class="ch-row-between panel-head">
+                  <div>
+                    <span class="ch-overline">Pick Ownership</span>
+                    <h2 class="ch-section-title">Traded Draft Picks</h2>
+                  </div>
+                  <span class="ch-chip is-neutral mono">{{ filteredPicks().length }} picks</span>
+                </div>
+
+                @if (filteredPicks().length === 0) {
+                  <div class="empty-panel">No traded draft picks match your filter.</div>
+                } @else {
+                  <div class="ch-mobile-feed mobile-card-pad">
+                    @for (pk of filteredPicks(); track $index) {
+                      <div class="ch-data-card">
+                        <div class="ch-row-between">
+                          <strong class="mono">{{ pk.season }} Round {{ pk.round }}</strong>
+                          @if (filteredTeam(); as fTeam) {
+                            <span
+                              class="ch-chip"
+                              [class.is-positive]="pk.currentOwnerRosterId === fTeam.rosterId"
+                              [class.is-negative]="pk.currentOwnerRosterId !== fTeam.rosterId"
+                            >
+                              {{ pk.currentOwnerRosterId === fTeam.rosterId ? 'Acquired' : 'Dealt Away' }}
+                            </span>
+                          }
+                        </div>
+                        <div class="ch-row-between">
+                          <span class="muted-col">Orig: {{ pk.originalOwnerName }}</span>
+                          <a class="team-link" [routerLink]="['/teams', pk.currentOwnerRosterId]">Now: {{ pk.currentOwnerName }} →</a>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+                    <table class="ch-table">
+                      <thead>
+                        <tr>
+                          <th>Season</th>
+                          <th>Round</th>
+                          <th>Original Franchise</th>
+                          <th>Current Owner</th>
+                          @if (filteredTeam()) {
+                            <th>Direction</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (pk of filteredPicks(); track $index) {
+                          <tr>
+                            <td class="mono">{{ pk.season }}</td>
+                            <td class="mono">Round {{ pk.round }}</td>
+                            <td>{{ pk.originalOwnerName }}</td>
+                            <td>
+                              <a class="team-link" [routerLink]="['/teams', pk.currentOwnerRosterId]">
+                                {{ pk.currentOwnerName }}
+                              </a>
+                            </td>
+                            @if (filteredTeam(); as fTeam) {
+                              <td>
+                                <span
+                                  class="ch-chip"
+                                  [class.is-positive]="pk.currentOwnerRosterId === fTeam.rosterId"
+                                  [class.is-negative]="pk.currentOwnerRosterId !== fTeam.rosterId"
+                                >
+                                  {{ pk.currentOwnerRosterId === fTeam.rosterId ? 'Acquired' : 'Dealt Away' }}
+                                </span>
+                              </td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </section>
+            </div>
+          }
+        </div>
+
+        <aside class="span-4 ch-card activity-card">
+          <div class="panel-head">
+            <div class="ch-row-between">
+              <div>
+                <span class="ch-overline">Front Office</span>
+                <h2 class="ch-section-title">Team Activity</h2>
+              </div>
+              @if (selectedRosterFilter() !== 'all') {
+                <button type="button" class="ch-btn ch-btn-ghost reset-btn" (click)="selectedRosterFilter.set('all')">
+                  Show all
+                </button>
+              }
+            </div>
+            <span class="activity-hint">Tap any franchise to filter deals &amp; moves</span>
+          </div>
+
+          <div class="ch-table-wrap ch-sticky-scroll">
+            <table class="ch-table activity-table">
+              <thead>
+                <tr>
+                  <th>Franchise</th>
+                  <th class="num">Trades</th>
+                  <th class="num">Moves</th>
+                  <th class="num">{{ summary.usesFaab ? 'FAAB' : 'Pri' }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of teamActivity(); track row.rosterId) {
+                  <tr
+                    class="is-clickable"
+                    [class.is-selected-row]="selectedRosterFilter() === row.rosterId"
+                    (click)="toggleTeamFilter(row.rosterId)"
+                  >
+                    <td>
+                      <div class="ch-flex-row">
+                        <span class="ch-avatar sz-20">
+                          @if (row.avatarUrl) {
+                            <img [src]="row.avatarUrl" [alt]="row.teamName" />
+                          } @else {
+                            {{ row.initials }}
+                          }
+                        </span>
+                        <span class="team-name">{{ row.teamName }}</span>
+                      </div>
+                    </td>
+                    <td class="num mono">{{ row.trades }}</td>
+                    <td class="num mono">{{ row.moves }}</td>
+                    <td class="num mono muted-col">
+                      @if (row.usesFaab) {
+                        ${{ row.faabRemaining }}
+                      } @else {
+                        #{{ row.waiverPriority }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </aside>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,240 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack overview-page">
+    <header class="page-head">
+      <div class="ch-stack">
+        <span class="ch-skeleton" style="width: 140px; height: 34px;"></span>
+        <span class="ch-skeleton" style="width: 240px; height: 16px; margin-top: 8px;"></span>
+      </div>
+      <span class="ch-skeleton" style="width: 140px; height: 36px;"></span>
+    </header>
+    <div class="ch-bento">
+      <div class="ch-feature span-12 skeleton-feature">
+        <span class="ch-skeleton-dark" style="width: 160px; height: 14px;"></span>
+        <span class="ch-skeleton-dark" style="height: 110px;"></span>
+      </div>
+      <div class="ch-card span-7"><span class="ch-skeleton" style="height: 280px;"></span></div>
+      <div class="ch-card span-5"><span class="ch-skeleton" style="height: 280px;"></span></div>
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack overview-page ch-enter">
+    <app-page-header
+      [overline]="'Clubhouse Hub · ' + data.league.season"
+      title="Overview"
+      [context]="
+        data.league.name +
+        ' · ' +
+        scoringLabel() +
+        ' · ' +
+        data.league.total_rosters +
+        ' teams · Week ' +
+        data.currentWeek +
+        (data.completedWeek > 0 && data.completedWeek < data.currentWeek
+          ? ' (' + data.completedWeek + ' final)'
+          : '')
+      "
+      [mobileContext]="data.league.name + ' · ' + scoringLabel() + ' · Wk ' + data.currentWeek"
+      [meta]="'Updated ' + data.loadedAtTime"
+    >
+      @if (hasLiveWeek()) {
+        <a class="ch-btn ch-btn-primary is-compact" routerLink="/watch-party">Watch Party →</a>
+      } @else {
+        <a class="ch-btn ch-btn-secondary is-compact" routerLink="/games">NFL Games →</a>
+      }
+      <a class="ch-btn ch-btn-ghost is-compact" routerLink="/recaps">Recaps</a>
+      <button
+        type="button"
+        class="ch-btn ch-btn-secondary is-compact"
+        [disabled]="sleeper.loading()"
+        (click)="refresh()"
+      >
+        {{ sleeper.loading() ? 'Syncing...' : 'Refresh' }}
+      </button>
+    </app-page-header>
+
+    <div class="ch-bento">
+      @if (sleeper.seasonPhase() === 'pre_draft' || sleeper.seasonPhase() === 'drafting') {
+        <section class="ch-feature span-12 ch-stack pre-draft-hero">
+          <div class="ch-row-between pre-draft-head">
+            <div>
+              <span class="ch-overline dark-overline">
+                {{ sleeper.seasonPhase() === 'drafting' ? 'Draft Room Live' : 'Off-Season · Pre-Draft Window' }}
+              </span>
+              <h2 class="ch-section-title pre-draft-title">
+                {{ sleeper.seasonPhase() === 'drafting' ? 'The draft is underway' : 'Pre-Draft Headquarters' }}
+              </h2>
+            </div>
+            <div class="ch-flex-row">
+              <span class="ch-chip is-signal mono">
+                {{ data.draft?.settings?.rounds ?? 15 }} Rds · {{ scoringLabel() }}
+              </span>
+              <a class="ch-btn ch-btn-primary is-compact" routerLink="/draft">Open Draft Room →</a>
+              <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">All-Time History</a>
+            </div>
+          </div>
+          <p class="pre-draft-copy">
+            Weekly matchups launch in Week 1. Review franchise capsules, prospect ADP tiers, draft slots, and multi-season H2H rivalries before kickoff.
+          </p>
+          @if (preDraftOrder().length > 0) {
+            <div class="draft-order-strip">
+              @for (item of preDraftOrder(); track item.slot) {
+                @if (item.team; as tm) {
+                  <a class="draft-slot-pill" [routerLink]="['/teams', tm.rosterId]">
+                    <span class="mono draft-slot-num">#{{ item.slot }}</span>
+                    <span>{{ tm.teamName }}</span>
+                  </a>
+                }
+              }
+            </div>
+          }
+        </section>
+      } @else {
+        @if (seasonChampion(); as champ) {
+          <section class="ch-card span-12 ch-row-between season-final-banner">
+            <div class="ch-flex-row">
+              <span class="ch-chip is-jade mono">{{ data.league.season }} SEASON FINAL</span>
+              <strong class="season-champ-name">{{ champ.teamName }}</strong>
+              <span class="mono season-champ-meta">
+                Top Seed {{ champ.recordLabel }} · {{ champ.pointsFor.toFixed(1) }} PF
+              </span>
+            </div>
+            <div class="ch-flex-row">
+              <a class="ch-btn ch-btn-secondary is-compact" routerLink="/playoffs">Final Bracket</a>
+              <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">All-Time History →</a>
+            </div>
+          </section>
+        }
+
+        <div class="span-12">
+          <app-featured-matchup-card
+            [matchup]="sleeper.featuredMatchup()"
+            [isUserMatchup]="isUserFeatured()"
+            [week]="sleeper.selectedWeek()"
+            [availableWeeks]="sleeper.availableWeeks()"
+            (weekSelected)="onWeekSelected($event)"
+          />
+        </div>
+      }
+
+      @if (quickStrip(); as strip) {
+        <div class="span-12 ch-stat-strip-4">
+          @if (strip.focusTeam; as ft) {
+            <a class="ch-card ch-interactive ch-stack strip-card" [routerLink]="['/teams', ft.rosterId]">
+              <div class="ch-row-between">
+                <span class="ch-overline">{{ strip.isMyTeam ? 'My Franchise' : 'League Leader' }}</span>
+                <span class="ch-chip is-jade mono">#{{ ft.standingsRank }}</span>
+              </div>
+              <strong class="strip-title">{{ ft.teamName }}</strong>
+              <span class="strip-sub mono">
+                {{ ft.recordLabel }} · {{ strip.focusAvg.toFixed(1) }} PPG · {{ ft.pointsFor.toFixed(1) }} PF
+              </span>
+            </a>
+          }
+
+          <a class="ch-card ch-interactive ch-stack strip-card" routerLink="/standings">
+            <div class="ch-row-between">
+              <span class="ch-overline">Scoring Pace</span>
+              <span class="ch-chip is-neutral mono">{{ data.completedWeek }} Wks</span>
+            </div>
+            <strong class="strip-title mono">
+              {{ strip.leagueAvgPpg > 0 ? strip.leagueAvgPpg.toFixed(1) + ' avg' : 'Season Start' }}
+            </strong>
+            <span class="strip-sub mono">
+              @if (strip.seasonHigh > 0) {
+                High: {{ strip.seasonHigh.toFixed(1) }} pts
+              } @else {
+                Standings &amp; power rankings
+              }
+            </span>
+          </a>
+
+          <a class="ch-card ch-interactive ch-stack strip-card" routerLink="/playoffs">
+            <div class="ch-row-between">
+              <span class="ch-overline">Playoff Cut</span>
+              <span class="ch-chip is-neutral mono">Top {{ strip.playoffCut }}</span>
+            </div>
+            @if (strip.cutoffTeam; as cut) {
+              <strong class="strip-title">{{ cut.teamName }}</strong>
+              <span class="strip-sub mono">
+                #{{ strip.playoffCut }}: {{ cut.recordLabel }} · {{ cut.pointsFor.toFixed(1) }} PF
+              </span>
+            } @else {
+              <strong class="strip-title">Bracket Watch</strong>
+              <span class="strip-sub">View seeded bracket →</span>
+            }
+          </a>
+
+          <a class="ch-card ch-interactive ch-stack strip-card" routerLink="/trades">
+            <div class="ch-row-between">
+              <span class="ch-overline">League Wire</span>
+              <span class="ch-chip is-neutral mono">{{ strip.tradesCount }} Trades</span>
+            </div>
+            <strong class="strip-title mono">{{ strip.movesCount }} Moves</strong>
+            <span class="strip-sub">Waivers &amp; traded picks →</span>
+          </a>
+        </div>
+      }
+
+      <div class="span-7">
+        <app-standings-snapshot-card
+          [teams]="data.teams"
+          [playoffTeams]="data.league.settings.playoff_teams ?? 4"
+          [myRosterId]="sleeper.myTeam()?.rosterId ?? null"
+        />
+      </div>
+
+      <div class="span-5 ch-stack right-col">
+        <app-league-pulse-card [insights]="data.pulseInsights" />
+
+        <section class="ch-card ch-stack slate-card">
+          <div class="ch-row-between">
+            <div>
+              <span class="ch-overline">Week {{ sleeper.selectedWeek() }} Slate</span>
+              <h2 class="ch-section-title">League Scoreboard</h2>
+            </div>
+            <a class="slate-link" routerLink="/matchups">Full slate →</a>
+          </div>
+
+          @if (weekMatchupsPreview().length === 0) {
+            <div class="ch-well slate-empty">No matchups listed for Week {{ sleeper.selectedWeek() }}.</div>
+          } @else {
+            <div class="ch-stack slate-list">
+              @for (m of weekMatchupsPreview(); track m.matchupId) {
+                <a
+                  class="ch-well ch-stack slate-row"
+                  [routerLink]="m.status === 'Live' ? ['/watch-party'] : ['/matchups']"
+                  [queryParams]="{ matchup: m.matchupId, week: sleeper.selectedWeek() }"
+                >
+                  <div class="ch-row-between">
+                    <span class="slate-side" [class.is-win]="m.home.isWinner">
+                      {{ m.home.teamName }}
+                    </span>
+                    <span class="mono slate-pts" [class.is-win]="m.home.isWinner">
+                      {{ m.home.points.toFixed(1) }}
+                    </span>
+                  </div>
+                  @if (m.away; as away) {
+                    <div class="ch-row-between">
+                      <span class="slate-side" [class.is-win]="away.isWinner">
+                        {{ away.teamName }}
+                      </span>
+                      <span class="mono slate-pts" [class.is-win]="away.isWinner">
+                        {{ away.points.toFixed(1) }}
+                      </span>
+                    </div>
+                  } @else {
+                    <span class="slate-bye">Bye Week</span>
+                  }
+                </a>
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <div class="span-12">
+        <app-scoring-trend-card [data]="data.weeklyLeagueAverages" />
+      </div>
+    </div>
+  </div>
+}

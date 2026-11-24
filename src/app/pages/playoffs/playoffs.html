@@ -1,0 +1,554 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack playoffs-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 170px; height: 34px;"></span>
+      <span class="ch-skeleton" style="width: 240px; height: 16px;"></span>
+    </header>
+    <span class="ch-skeleton-dark" style="height: 180px;"></span>
+    <span class="ch-skeleton" style="height: 260px;"></span>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack playoffs-page ch-enter">
+    <app-page-header
+      [overline]="'Postseason Picture · ' + data.league.season"
+      title="Playoffs"
+      [context]="
+        data.league.name +
+        ' · ' +
+        (data.league.settings.playoff_teams ?? 4) +
+        '-team bracket · Starts Week ' +
+        (data.league.settings.playoff_week_start ?? 15)
+      "
+      [mobileContext]="
+        (data.league.settings.playoff_teams ?? 4) +
+        '-team bracket · Week ' +
+        (data.league.settings.playoff_week_start ?? 15)
+      "
+    >
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/insights" [queryParams]="{ mode: 'median' }">
+        Median Lab →
+      </a>
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/standings">Standings →</a>
+      @if (hasOfficialBracket()) {
+        <div class="ch-segmented" role="tablist" aria-label="Bracket view">
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="bracketKind() === 'winners'"
+            (click)="setBracketKind('winners')"
+          >
+            Winners
+          </button>
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="bracketKind() === 'losers'"
+            (click)="setBracketKind('losers')"
+          >
+            Consolation
+          </button>
+        </div>
+      }
+    </app-page-header>
+
+    <div class="ch-bento">
+      <section class="ch-feature ch-stack span-12 playoff-hero">
+        @if (championInfo(); as champ) {
+          <div class="hero-row">
+            <div>
+              <span class="ch-overline on-dark">League Champion · Week {{ champ.week }}</span>
+              <h2 class="champ-name">{{ champ.champ.teamName }}</h2>
+              <p class="champ-sub">
+                Defeated {{ champ.runnerUp.teamName }}
+                @if (champ.champ.score !== null && champ.runnerUp.score !== null) {
+                  (<span class="mono">{{ champ.champ.score.toFixed(2) }} – {{ champ.runnerUp.score.toFixed(2) }}</span>)
+                }
+              </p>
+            </div>
+            <div class="ch-feature-tile champ-badge">
+              <span class="ch-team-hero-stat">Title Winner</span>
+              <strong class="ch-team-hero-val mono is-signal">#{{ champ.champ.seed ?? 1 }} Seed</strong>
+            </div>
+          </div>
+        } @else {
+          <div class="hero-row">
+            <div>
+              <span class="ch-overline on-dark">
+                {{ hasOfficialBracket() ? 'Postseason Active' : 'Projected Postseason' }}
+              </span>
+              <h2 class="champ-name">
+                {{ hasOfficialBracket() ? 'Official Sleeper Bracket' : 'If the Season Ended Today' }}
+              </h2>
+              <p class="champ-sub">
+                @if (hasOfficialBracket()) {
+                  Live postseason progression synced directly from Sleeper playoff matchups.
+                } @else {
+                  Official bracket activates in Week {{ data.league.settings.playoff_week_start ?? 15 }}.
+                }
+              </p>
+            </div>
+            <span class="ch-chip mono" [class.is-signal]="hasOfficialBracket()" [class.is-dark-muted]="!hasOfficialBracket()">
+              {{ hasOfficialBracket() ? 'Live Bracket' : 'Projection' }}
+            </span>
+          </div>
+        }
+
+        @if (playoffSummary(); as sum) {
+          <div class="ch-stat-strip-4">
+            <a class="ch-feature-tile sum-tile" [routerLink]="['/teams', sum.topSeed.rosterId]">
+              <span class="ch-team-hero-stat">#1 Overall Seed</span>
+              <strong class="ch-team-hero-val tile-name">{{ sum.topSeed.teamName }}</strong>
+              <span class="ch-team-hero-sub mono is-signal">
+                {{ sum.topSeed.recordLabel }} · {{ sum.topSeed.pointsFor.toFixed(1) }} PF
+              </span>
+            </a>
+
+            <a class="ch-feature-tile sum-tile" [routerLink]="['/teams', sum.bubbleSeed.rosterId]">
+              <span class="ch-team-hero-stat">Last Seed In (#{{ sum.cut }})</span>
+              <strong class="ch-team-hero-val tile-name">{{ sum.bubbleSeed.teamName }}</strong>
+              <span class="ch-team-hero-sub mono">
+                {{ sum.bubbleSeed.recordLabel }} · {{ sum.bubbleSeed.pointsFor.toFixed(1) }} PF
+              </span>
+            </a>
+
+            @if (sum.firstOut; as firstOut) {
+              <a class="ch-feature-tile sum-tile" [routerLink]="['/teams', firstOut.rosterId]">
+                <span class="ch-team-hero-stat">First Team Out (#{{ sum.cut + 1 }})</span>
+                <strong class="ch-team-hero-val tile-name">{{ firstOut.teamName }}</strong>
+                <span class="ch-team-hero-sub mono">
+                  {{ firstOut.recordLabel }} · {{ firstOut.pointsFor.toFixed(1) }} PF
+                </span>
+              </a>
+            } @else {
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">Bracket Size</span>
+                <strong class="ch-team-hero-val mono">{{ sum.cut }} Teams</strong>
+                <span class="ch-team-hero-sub">Week {{ sum.playoffStartWeek }} start</span>
+              </div>
+            }
+
+            <div class="ch-feature-tile">
+              <span class="ch-team-hero-stat">Runway Status</span>
+              <strong class="ch-team-hero-val mono">
+                {{ hasOfficialBracket() ? 'Playoffs On' : sum.weeksRemaining + ' Wks Left' }}
+              </strong>
+              <span class="ch-team-hero-sub">Begins Week {{ sum.playoffStartWeek }}</span>
+            </div>
+          </div>
+        }
+      </section>
+
+      <section class="ch-card span-12 bracket-panel">
+        <div class="ch-row-between bracket-bar">
+          <div>
+            <span class="ch-overline">
+              {{ sandboxMode() ? 'Path Simulator — Click teams to pick winners' : hasOfficialBracket() ? 'Sleeper Bracket Tree' : 'Projected Matchup Tree' }}
+            </span>
+            <h2 class="ch-section-title">
+              {{ bracketKind() === 'losers' && hasOfficialBracket() ? 'Consolation Bracket' : 'Championship Bracket' }}
+            </h2>
+          </div>
+
+          <div class="ch-flex-row">
+            @if (activeRounds().length > 0) {
+              <button
+                type="button"
+                class="ch-btn is-compact"
+                [class.ch-btn-primary]="sandboxMode()"
+                [class.ch-btn-secondary]="!sandboxMode()"
+                (click)="toggleSandboxMode()"
+              >
+                {{ sandboxMode() ? 'Done Simulating' : 'Interactive Sandbox' }}
+              </button>
+              @if (sandboxMode() && sandboxBracket().sandboxChamp; as sc) {
+                <span class="ch-chip is-signal mono">Sim Champ: {{ sc.teamName }}</span>
+                <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="resetSandbox()">
+                  Reset
+                </button>
+              }
+            }
+            @if (!hasOfficialBracket() && !sandboxMode()) {
+              <span class="bracket-hint ch-desktop-only">Scores show season PPG until kickoff</span>
+            }
+          </div>
+        </div>
+
+        @if (sandboxBracket().rounds.length === 0) {
+          <div class="ch-well empty-bracket">No bracket matchups available yet.</div>
+        } @else {
+          <!-- Mobile Round Stepper -->
+          <div class="ch-mobile-only mobile-round-tabs">
+            <div class="ch-segmented" role="tablist" aria-label="Select playoff round">
+              @for (round of sandboxBracket().rounds; track round.round; let rIdx = $index) {
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="clampedMobileRoundIdx() === rIdx"
+                  (click)="mobileRoundIndex.set(rIdx)"
+                >
+                  {{ round.title }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="bracket-columns">
+            @for (round of sandboxBracket().rounds; track round.round; let rIdx = $index) {
+              <div class="ch-stack round-col" [class.mobile-round-active]="clampedMobileRoundIdx() === rIdx">
+                <div class="ch-row-between round-head">
+                  <span class="round-title">{{ round.title }}</span>
+                  @if (round.week) {
+                    <span class="ch-chip is-neutral mono">Wk {{ round.week }}</span>
+                  }
+                </div>
+
+                <div class="round-matches">
+                  @for (m of round.matchups; track m.matchId) {
+                    <article
+                      class="ch-well ch-stack bracket-card"
+                      [class.is-user-match]="
+                        myRosterId() !== null &&
+                        (m.top.rosterId === myRosterId() || m.bottom.rosterId === myRosterId())
+                      "
+                    >
+                      <div class="ch-row-between">
+                        <span class="match-label">{{ m.label }}</span>
+                        @if (
+                          myRosterId() !== null &&
+                          (m.top.rosterId === myRosterId() || m.bottom.rosterId === myRosterId())
+                        ) {
+                          <span class="ch-chip is-jade">Your Path</span>
+                        }
+                      </div>
+
+                      @for (side of [m.top, m.bottom]; track $index) {
+                        @let tMeta = teamMeta(side.rosterId);
+                        @let ppg = teamPpg(side.rosterId);
+                        <div
+                          class="bracket-side"
+                          [class.is-winner]="side.isWinner"
+                          [class.is-sandbox-pick]="sandboxMode() && side.rosterId !== null"
+                          (click)="sandboxMode() && pickBracketWinner(round.round, m.matchId, side.rosterId)"
+                        >
+                          <div class="side-left">
+                            @if (side.seed) {
+                              <span class="seed-pill mono">#{{ side.seed }}</span>
+                            }
+                            @if (tMeta) {
+                              <span class="ch-avatar sz-20">
+                                @if (tMeta.avatarUrl) {
+                                  <img [src]="tMeta.avatarUrl" [alt]="tMeta.teamName" />
+                                } @else {
+                                  {{ tMeta.initials }}
+                                }
+                              </span>
+                            }
+                            @if (side.rosterId && !sandboxMode()) {
+                              <a class="side-link" [routerLink]="['/teams', side.rosterId]">
+                                {{ side.teamName }}
+                              </a>
+                            } @else if (side.rosterId) {
+                              <span class="side-link">{{ side.teamName }}</span>
+                            } @else {
+                              <span class="side-tbd">{{ side.teamName }}</span>
+                            }
+                          </div>
+
+                          <span class="side-score mono">
+                            @if (side.score !== null) {
+                              {{ side.score.toFixed(2) }}
+                            } @else if (ppg) {
+                              <span class="ppg-hint">{{ ppg }} avg</span>
+                            } @else {
+                              —
+                            }
+                          </span>
+                        </div>
+                      }
+                    </article>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      @if (playoffOdds(); as odds) {
+        <section class="ch-card span-12 sim-odds-panel">
+          <div class="ch-row-between sim-head">
+            <div>
+              <span class="ch-overline">
+                Monte Carlo · {{ odds.trials }} Seasons · {{ odds.remainingWeeks }} Wk{{ odds.remainingWeeks === 1 ? '' : 's' }} Left
+              </span>
+              <h2 class="ch-section-title">Playoff &amp; Title Probability Simulator</h2>
+            </div>
+
+            <div class="ch-flex-row">
+              @if (odds.remainingWeeks > 0 && !scheduleSynced()) {
+                <button
+                  type="button"
+                  class="ch-btn ch-btn-secondary is-compact"
+                  [disabled]="scheduleLoading()"
+                  (click)="syncFutureSchedule()"
+                >
+                  {{ scheduleLoading() ? 'Syncing...' : 'Use Remaining Slate' }}
+                </button>
+              } @else if (scheduleSynced()) {
+                <span class="ch-chip is-jade mono">Exact Sleeper Schedule</span>
+              }
+              <button
+                type="button"
+                class="ch-btn ch-btn-secondary is-compact"
+                (click)="rerunMonteCarlo()"
+              >
+                Re-Run Sims ↻
+              </button>
+            </div>
+          </div>
+
+          <div class="ch-mobile-feed mobile-panel-pad">
+            @for (row of odds.rows; track row.rosterId) {
+              <a
+                class="ch-data-card ch-interactive"
+                [class.is-highlighted]="myRosterId() === row.rosterId"
+                [routerLink]="['/teams', row.rosterId]"
+              >
+                <div class="ch-row-between">
+                  <div>
+                    <strong class="team-name">{{ row.teamName }}</strong>
+                    <div class="muted-sub mono">{{ row.currentRecord }} → Proj {{ row.projWins.toFixed(1) }}-{{ row.projLosses.toFixed(1) }}</div>
+                  </div>
+                  <span
+                    class="ch-chip"
+                    [class.is-positive]="row.statusTag === 'Clinched' || row.statusTag === 'Strong Lock'"
+                    [class.is-jade]="row.statusTag === 'Contender'"
+                    [class.is-warning]="row.statusTag === 'Bubble'"
+                    [class.is-neutral]="row.statusTag === 'Long Shot' || row.statusTag === 'Eliminated'"
+                  >
+                    {{ row.statusTag }}
+                  </span>
+                </div>
+
+                <div class="sim-bar-row">
+                  <div class="ch-row-between mono prob-label">
+                    <span>Playoff Odds</span>
+                    <strong>{{ row.playoffPct.toFixed(1) }}%</strong>
+                  </div>
+                  <div class="ch-meter">
+                    <div class="ch-meter-fill" [style.width.%]="row.playoffPct"></div>
+                  </div>
+                </div>
+
+                <div class="ch-data-card-metrics">
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Title %</span>
+                    <span class="ch-data-metric-val mono title-pct">{{ row.titlePct.toFixed(1) }}%</span>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Avg Seed</span>
+                    <span class="ch-data-metric-val mono">#{{ row.avgSeed.toFixed(1) }}</span>
+                  </div>
+                  @if (odds.hasByeSlots) {
+                    <div class="ch-data-metric">
+                      <span class="ch-data-metric-lbl">Bye %</span>
+                      <span class="ch-data-metric-val mono">{{ row.byePct.toFixed(1) }}%</span>
+                    </div>
+                  }
+                </div>
+              </a>
+            }
+          </div>
+
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table sim-table">
+              <thead>
+                <tr>
+                  <th class="ch-sticky-col">Franchise</th>
+                  <th class="num">Current</th>
+                  <th class="num">Proj Final</th>
+                  <th>Playoff %</th>
+                  @if (odds.hasByeSlots) {
+                    <th class="num">Bye %</th>
+                  }
+                  <th class="num">Title %</th>
+                  <th class="num">Avg Seed</th>
+                  <th>Outlook</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of odds.rows; track row.rosterId) {
+                  <tr
+                    class="is-clickable"
+                    [class.is-my-row]="myRosterId() === row.rosterId"
+                    [routerLink]="['/teams', row.rosterId]"
+                  >
+                    <td class="ch-sticky-col team-name">{{ row.teamName }}</td>
+                    <td class="num mono muted-txt">{{ row.currentRecord }}</td>
+                    <td class="num mono">{{ row.projWins.toFixed(1) }}-{{ row.projLosses.toFixed(1) }}</td>
+                    <td class="prob-cell">
+                      <div class="ch-row-between mono prob-label">
+                        <strong>{{ row.playoffPct.toFixed(1) }}%</strong>
+                      </div>
+                      <div class="ch-meter">
+                        <div class="ch-meter-fill" [style.width.%]="row.playoffPct"></div>
+                      </div>
+                    </td>
+                    @if (odds.hasByeSlots) {
+                      <td class="num mono">{{ row.byePct.toFixed(1) }}%</td>
+                    }
+                    <td class="num mono title-pct">{{ row.titlePct.toFixed(1) }}%</td>
+                    <td class="num mono muted-txt">#{{ row.avgSeed.toFixed(1) }}</td>
+                    <td>
+                      <span
+                        class="ch-chip"
+                        [class.is-positive]="row.statusTag === 'Clinched' || row.statusTag === 'Strong Lock'"
+                        [class.is-jade]="row.statusTag === 'Contender'"
+                        [class.is-warning]="row.statusTag === 'Bubble'"
+                        [class.is-neutral]="row.statusTag === 'Long Shot' || row.statusTag === 'Eliminated'"
+                      >
+                        {{ row.statusTag }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      <section class="ch-card span-7 seed-table-panel">
+        <div class="seed-head">
+          <span class="ch-overline">Postseason Chase</span>
+          <h2 class="ch-section-title">Seeding &amp; Bubble Watch</h2>
+        </div>
+
+        <div class="ch-mobile-feed mobile-panel-pad">
+          @for (row of seedingRows(); track row.team.rosterId) {
+            <a
+              class="ch-data-card ch-interactive"
+              [class.is-highlighted]="myRosterId() === row.team.rosterId"
+              [routerLink]="['/teams', row.team.rosterId]"
+            >
+              <div class="ch-row-between">
+                <div class="ch-flex-row">
+                  <span class="mono">#{{ row.team.standingsRank }}</span>
+                  <strong class="team-name">{{ row.team.teamName }}</strong>
+                </div>
+                <span
+                  class="ch-chip"
+                  [class.is-positive]="row.hasBye"
+                  [class.is-jade]="row.inPlayoffs && !row.hasBye"
+                  [class.is-warning]="!row.inPlayoffs && row.gamesBack <= 1"
+                  [class.is-neutral]="!row.inPlayoffs && row.gamesBack > 1"
+                >
+                  {{ row.status }}
+                </span>
+              </div>
+              <div class="ch-row-between mono muted-sub">
+                <span>{{ row.team.recordLabel }} · {{ row.team.pointsFor.toFixed(1) }} PF ({{ row.ppg.toFixed(1) }} PPG)</span>
+                <span>{{ row.inPlayoffs ? 'In' : row.gamesBack === 0 ? 'TB' : row.gamesBack + ' GB' }}</span>
+              </div>
+            </a>
+          }
+        </div>
+
+        <div class="ch-table-wrap ch-desktop-table">
+          <table class="ch-table">
+            <thead>
+              <tr>
+                <th>Seed</th>
+                <th>Franchise</th>
+                <th>Record</th>
+                <th class="num">PF</th>
+                <th class="num">PPG</th>
+                <th class="num">GB Cut</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of seedingRows(); track row.team.rosterId) {
+                <tr
+                  class="is-clickable"
+                  [class.is-my-row]="myRosterId() === row.team.rosterId"
+                  [routerLink]="['/teams', row.team.rosterId]"
+                >
+                  <td class="mono">#{{ row.team.standingsRank }}</td>
+                  <td>
+                    <div class="ch-flex-row">
+                      <span class="team-name">{{ row.team.teamName }}</span>
+                      @if (myRosterId() === row.team.rosterId) {
+                        <span class="ch-chip is-jade">You</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="mono">{{ row.team.recordLabel }}</td>
+                  <td class="num mono">{{ row.team.pointsFor.toFixed(1) }}</td>
+                  <td class="num mono muted-txt">{{ row.ppg.toFixed(1) }}</td>
+                  <td class="num mono">
+                    {{ row.inPlayoffs ? '—' : row.gamesBack === 0 ? 'Tiebreak' : row.gamesBack + ' GB' }}
+                  </td>
+                  <td>
+                    <span
+                      class="ch-chip"
+                      [class.is-positive]="row.hasBye"
+                      [class.is-jade]="row.inPlayoffs && !row.hasBye"
+                      [class.is-warning]="!row.inPlayoffs && row.gamesBack <= 1"
+                      [class.is-neutral]="!row.inPlayoffs && row.gamesBack > 1"
+                    >
+                      {{ row.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="ch-card ch-stack span-5 tiebreak-panel">
+        <div>
+          <span class="ch-overline">Cutline Race</span>
+          <h2 class="ch-section-title">Bubble Tiebreak Margin (PF)</h2>
+          <p class="tiebreak-sub">Sleeper breaks tied playoff records by total Points For.</p>
+        </div>
+
+        <div class="ch-stack bubble-list">
+          @for (row of tiebreakContenders(); track row.team.rosterId) {
+            <a
+              class="ch-well ch-row-between bubble-row"
+              [class.is-cut-edge]="playoffSummary()?.cut === row.team.standingsRank"
+              [routerLink]="['/teams', row.team.rosterId]"
+            >
+              <div class="ch-stack">
+                <div class="ch-flex-row">
+                  <span class="mono muted-txt">#{{ row.team.standingsRank }}</span>
+                  <strong class="team-name">{{ row.team.teamName }}</strong>
+                </div>
+                <span class="mono muted-sub">
+                  {{ row.team.recordLabel }} · {{ row.team.pointsFor.toFixed(1) }} PF
+                </span>
+              </div>
+
+              <span
+                class="ch-chip mono"
+                [class.is-positive]="row.pfDeltaFromCut > 0"
+                [class.is-negative]="row.pfDeltaFromCut < 0"
+                [class.is-jade]="row.pfDeltaFromCut === 0"
+              >
+                @if (row.pfDeltaFromCut === 0) {
+                  Cut Line
+                } @else if (row.pfDeltaFromCut > 0) {
+                  +{{ row.pfDeltaFromCut.toFixed(1) }} PF
+                } @else {
+                  {{ row.pfDeltaFromCut.toFixed(1) }} PF
+                }
+              </span>
+            </a>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+}

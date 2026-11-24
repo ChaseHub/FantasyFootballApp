@@ -1,0 +1,488 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack draft-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 160px; height: 34px;"></span>
+      <span class="ch-skeleton" style="width: 240px; height: 38px;"></span>
+    </header>
+    <div class="ch-bento">
+      <div class="ch-feature span-8"><span class="ch-skeleton-dark" style="height: 150px;"></span></div>
+      <div class="ch-card span-4"><span class="ch-skeleton" style="height: 150px;"></span></div>
+      <div class="ch-card span-12"><span class="ch-skeleton" style="height: 300px;"></span></div>
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack draft-page ch-enter">
+    <app-page-header
+      [overline]="'Draft Archive · ' + (draftMeta()?.season ?? data.league.season)"
+      title="Draft"
+      [context]="
+        data.league.name +
+        (draftMeta()
+          ? ' · ' + draftMeta()!.type + ' draft · ' + draftMeta()!.settings.rounds + ' rounds · ' + picks().length + ' picks'
+          : '')
+      "
+      [mobileContext]="(draftMeta()?.type ?? 'snake') + ' · ' + (draftMeta()?.settings?.rounds ?? '') + ' rds · ' + picks().length + ' picks'"
+    >
+      @if (picks().length > 0) {
+        <div class="ch-segmented" role="tablist" aria-label="Draft view">
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="viewTab() === 'board'"
+            (click)="setViewTab('board')"
+          >
+            Draft Board
+          </button>
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="viewTab() === 'list'"
+            (click)="setViewTab('list')"
+          >
+            Pick List ({{ filteredPicks().length }})
+          </button>
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="viewTab() === 'teams'"
+            (click)="setViewTab('teams')"
+          >
+            Team Recaps
+          </button>
+        </div>
+      }
+    </app-page-header>
+
+    @if (picks().length === 0) {
+      <section class="ch-feature ch-stack pre-draft-card">
+        <span class="ch-overline dark-overline">Pre-Draft · Draft Order &amp; Settings</span>
+        <h2 class="hero-title">Draft selections have not begun yet</h2>
+        <p class="pre-draft-copy">
+          Once the commissioner starts or completes the draft, every pick by round, positional allocation, and franchise class breakdown will stream here automatically.
+        </p>
+        <div class="ch-flex-row pre-draft-actions">
+          <a class="ch-btn ch-btn-primary is-compact" routerLink="/players">Scout Players →</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/teams">Teams</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">All-Time History</a>
+        </div>
+      </section>
+    } @else {
+      <div class="ch-bento">
+        @if (draftSummary(); as sum) {
+          <section class="ch-feature ch-stack span-8 draft-hero">
+            <div class="ch-row-between">
+              <div>
+                <span class="ch-overline on-dark">
+                  Draft Room · {{ draftMeta()?.type ?? 'snake' }}
+                </span>
+                <h2 class="hero-title">{{ sum.totalPicks }} Picks · {{ sum.rounds }} Rounds</h2>
+              </div>
+              <span class="ch-chip is-dark-muted mono">{{ draftMeta()?.status ?? 'complete' }}</span>
+            </div>
+
+            <div class="hero-tiles">
+              <a class="ch-feature-tile hero-tile" [routerLink]="['/teams', sum.firstOverall.rosterId]">
+                <span class="ch-team-hero-stat">1.01 Overall</span>
+                <strong class="tile-main">{{ sum.firstOverall.playerName }}</strong>
+                <span class="ch-team-hero-sub mono">
+                  {{ sum.firstOverall.position }} · {{ sum.firstOverall.teamName }} ·
+                  {{ sum.firstOverall.seasonPoints.toFixed(1) }}p
+                </span>
+              </a>
+
+              <a class="ch-feature-tile hero-tile" [routerLink]="['/teams', sum.bestSteal.rosterId]">
+                <span class="ch-team-hero-stat">Best Value (Rd {{ sum.bestSteal.round }})</span>
+                <strong class="tile-main is-signal">{{ sum.bestSteal.playerName }}</strong>
+                <span class="ch-team-hero-sub mono">
+                  {{ sum.bestSteal.pickLabel }} · {{ sum.bestSteal.teamName }} ·
+                  {{ sum.bestSteal.seasonPoints.toFixed(1) }}p
+                </span>
+              </a>
+
+              @if (sum.bestClass; as cls) {
+                <a class="ch-feature-tile hero-tile" [routerLink]="['/teams', cls.rosterId]">
+                  <span class="ch-team-hero-stat">Top Draft Class</span>
+                  <strong class="tile-main">{{ cls.teamName }}</strong>
+                  <span class="ch-team-hero-sub mono">{{ cls.pts.toFixed(1) }} total pts</span>
+                </a>
+              }
+            </div>
+          </section>
+        }
+
+        <aside class="ch-card ch-stack span-4 mix-card">
+          <div class="ch-row-between">
+            <div>
+              <span class="ch-overline">Positional Allocation</span>
+              <h2 class="ch-section-title">Draft Mix</h2>
+            </div>
+            <span class="mix-hint">Tap to filter</span>
+          </div>
+
+          <div class="mix-bar" aria-hidden="true">
+            @for (item of positionBreakdown(); track item.pos) {
+              <div
+                class="ch-pos-seg"
+                [attr.data-pos]="item.pos"
+                [style.width.%]="item.pct"
+                [title]="item.pos + ': ' + item.count"
+              ></div>
+            }
+          </div>
+
+          <div class="mix-legend">
+            @for (item of positionBreakdown(); track item.pos) {
+              <button
+                type="button"
+                class="mix-item"
+                [class.is-active-pos]="posFilter() === item.pos"
+                (click)="setPos(item.pos)"
+              >
+                <span class="ch-pos-dot" [attr.data-pos]="item.pos"></span>
+                <span class="mix-pos mono">{{ item.pos }}</span>
+                <span class="mix-count mono">{{ item.count }} ({{ item.pct.toFixed(0) }}%)</span>
+              </button>
+            }
+          </div>
+        </aside>
+
+        @if (viewTab() !== 'teams') {
+          <div class="span-12">
+            <app-filter-bar
+              [searchQuery]="searchQuery()"
+              searchPlaceholder="Search player, NFL team, manager..."
+              [activeFilterCount]="activeFilterCount()"
+              sheetTitle="Filter Draft Picks"
+              [resultLabel]="filteredPicks().length + ' picks'"
+              (searchQueryChange)="searchQuery.set($event)"
+              (clearAll)="clearFilters()"
+            >
+              <app-picker
+                [options]="teamFilterOptions()"
+                [value]="rosterFilter()"
+                [compact]="true"
+                [searchable]="true"
+                ariaLabel="Filter picks by team"
+                sheetTitle="Filter by Franchise"
+                (valueChange)="rosterFilter.set($event)"
+              />
+
+              @if (myRosterId(); as myId) {
+                <button
+                  type="button"
+                  class="ch-chip filter-btn"
+                  [class.is-jade]="rosterFilter() === myId"
+                  [class.is-neutral]="rosterFilter() !== myId"
+                  (click)="toggleRosterFilter(myId)"
+                >
+                  My Draft
+                </button>
+              }
+
+              <div class="ch-segmented" role="tablist" aria-label="Filter by position">
+                @for (pos of positions; track pos) {
+                  <button
+                    type="button"
+                    class="ch-segment"
+                    [class.is-active]="posFilter() === pos"
+                    (click)="setPos(pos)"
+                  >
+                    {{ pos }}
+                  </button>
+                }
+              </div>
+
+              @if (hasActiveFilters()) {
+                <button type="button" class="ch-btn ch-btn-ghost reset-btn ch-desktop-only" (click)="clearFilters()">
+                  Reset ×
+                </button>
+              }
+            </app-filter-bar>
+          </div>
+        }
+
+        @if (viewTab() === 'board') {
+          <section class="ch-card ch-stack span-12 board-card">
+            @if (selectedPickInsights(); as info) {
+              @let sel = info.pick;
+              <div class="ch-well pick-inspector">
+                <div class="ch-flex-row">
+                  <span class="ch-pos-pill mono" [attr.data-pos]="sel.position">{{ sel.position }}</span>
+                  <a
+                    class="ch-player-link"
+                    [routerLink]="['/players']"
+                    [queryParams]="{ player: sel.playerId }"
+                  >
+                    {{ sel.playerName }} ↗
+                  </a>
+                  <span class="mono muted-txt">{{ sel.nflTeam }} · {{ sel.pickLabel }} (#{{ sel.pickNo }})</span>
+                  @if (info.draftedPosRank && info.actualPosRank) {
+                    <span
+                      class="ch-chip mono"
+                      [class.is-positive]="(info.roiDelta ?? 0) > 0"
+                      [class.is-negative]="(info.roiDelta ?? 0) < 0"
+                      [class.is-neutral]="(info.roiDelta ?? 0) === 0"
+                    >
+                      Drafted {{ sel.position }}{{ info.draftedPosRank }} → Now {{ sel.position }}{{ info.actualPosRank }}
+                    </span>
+                  }
+                </div>
+                <div class="ch-flex-row">
+                  <a class="team-link" [routerLink]="['/teams', sel.rosterId]">{{ sel.teamName }} →</a>
+                  <span class="mono pts-txt">{{ sel.seasonPoints.toFixed(1) }} season pts</span>
+                </div>
+              </div>
+            }
+
+            <!-- Mobile Round Feed Accordion (<768px) -->
+            <div class="ch-mobile-feed mobile-rounds">
+              @for (rd of boardRounds(); track rd.round) {
+                <details class="round-accordion" [open]="rd.round <= 2 || hasActiveFilters()">
+                  <summary class="round-summary">
+                    <span class="round-sum-left">
+                      <span class="ch-chip is-neutral mono">Round {{ rd.round }}</span>
+                      <span class="mono muted">{{ rd.direction }} {{ rd.chronoPicks.length }} picks</span>
+                    </span>
+                    <span class="mono muted">Toggle ▾</span>
+                  </summary>
+
+                  <div class="round-mobile-picks">
+                    @for (p of rd.chronoPicks; track p.pickNo) {
+                      @if (!hasActiveFilters() || isPickHighlighted(p)) {
+                        <button
+                          type="button"
+                          class="mobile-pick-row"
+                          [class.is-selected]="selectedPick()?.pickNo === p.pickNo"
+                          (click)="selectPick(p)"
+                        >
+                          <div class="pick-row-left">
+                            <span class="mono pick-lbl">{{ p.pickLabel }}</span>
+                            <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                            <div class="pick-row-copy">
+                              <strong>{{ p.playerName }}</strong>
+                              <span class="mono">{{ p.teamName }} · {{ p.nflTeam }}</span>
+                            </div>
+                          </div>
+                          <span class="mono pick-pts">
+                            @if (isAuction() && p.auctionAmount !== null) {
+                              ${{ p.auctionAmount }}
+                            } @else if (p.seasonPoints > 0) {
+                              {{ p.seasonPoints.toFixed(1) }}p
+                            } @else {
+                              —
+                            }
+                          </span>
+                        </button>
+                      }
+                    }
+                  </div>
+                </details>
+              }
+            </div>
+
+            <!-- Desktop Full Grid Board (>=768px) -->
+            <div class="board-scroll ch-desktop-table">
+              <div class="col-headers" [style.--col-count]="boardColumns().length">
+                <div class="corner-cell mono">RD</div>
+                @for (col of boardColumns(); track col.slot) {
+                  <button
+                    type="button"
+                    class="col-header"
+                    [class.is-active-col]="rosterFilter() === col.rosterId"
+                    (click)="toggleRosterFilter(col.rosterId)"
+                  >
+                    <span class="ch-avatar sz-32">
+                      @if (col.avatarUrl) {
+                        <img [src]="col.avatarUrl" [alt]="col.teamName" />
+                      } @else {
+                        {{ col.initials }}
+                      }
+                    </span>
+                    <span class="ch-stack col-meta">
+                      <span class="col-slot mono">Slot {{ col.slot }}</span>
+                      <span class="col-team">{{ col.teamName }}</span>
+                    </span>
+                  </button>
+                }
+              </div>
+
+              @for (rd of boardRounds(); track rd.round) {
+                <div class="round-row">
+                  <div class="round-badge mono">
+                    <span>R{{ rd.round }}</span>
+                    <span class="dir-arrow">{{ rd.direction }}</span>
+                  </div>
+                  <div class="round-grid" [style.--col-count]="rd.colCount">
+                    @for (p of rd.cells; track $index) {
+                      @if (p) {
+                        <button
+                          type="button"
+                          class="ch-pick-cell"
+                          [attr.data-pos]="p.position"
+                          [class.is-dimmed]="!isPickHighlighted(p)"
+                          [class.is-selected]="selectedPick()?.pickNo === p.pickNo"
+                          (click)="selectPick(p)"
+                        >
+                          <div class="pick-top mono">
+                            <span>{{ p.pickLabel }}</span>
+                            <span class="ch-pos-pill" [attr.data-pos]="p.position">{{ p.position }}</span>
+                          </div>
+                          <div class="pick-player">{{ p.playerName }}</div>
+                          <div class="pick-bottom mono">
+                            <span>{{ p.nflTeam }}</span>
+                            <span class="pick-pts">
+                              @if (isAuction() && p.auctionAmount !== null) {
+                                ${{ p.auctionAmount }}
+                              } @else if (p.seasonPoints > 0) {
+                                {{ p.seasonPoints.toFixed(0) }}p
+                              } @else {
+                                —
+                              }
+                            </span>
+                          </div>
+                        </button>
+                      } @else {
+                        <div class="ch-pick-cell is-empty">—</div>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        } @else if (viewTab() === 'list') {
+          <section class="ch-card span-12 list-panel">
+            <div class="ch-mobile-feed mobile-pick-feed">
+              @for (p of filteredPicks(); track p.pickNo) {
+                <a class="ch-data-card ch-interactive" [routerLink]="['/teams', p.rosterId]">
+                  <div class="ch-row-between">
+                    <div class="ch-flex-row">
+                      <span class="mono muted">{{ p.pickLabel }} (#{{ p.pickNo }})</span>
+                      <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                    </div>
+                    <span class="mono pick-pts">{{ p.seasonPoints > 0 ? p.seasonPoints.toFixed(1) + ' pts' : '—' }}</span>
+                  </div>
+                  <div class="ch-row-between">
+                    <strong class="player-name">{{ p.playerName }} ({{ p.nflTeam }})</strong>
+                    <span class="muted">{{ p.teamName }}</span>
+                  </div>
+                </a>
+              }
+            </div>
+
+            <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+              <table class="ch-table">
+                <thead>
+                  <tr>
+                    <th>Pick</th>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th>Franchise</th>
+                    <th>Flags</th>
+                    <th class="num">Season Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of filteredPicks(); track p.pickNo) {
+                    <tr class="is-clickable" [routerLink]="['/teams', p.rosterId]">
+                      <td class="mono">{{ p.pickLabel }} (#{{ p.pickNo }})</td>
+                      <td>
+                        <span class="ch-pos-pill mono" [attr.data-pos]="p.position">{{ p.position }}</span>
+                      </td>
+                      <td>
+                        <a
+                          class="ch-player-link"
+                          [routerLink]="['/players']"
+                          [queryParams]="{ player: p.playerId }"
+                          (click)="$event.stopPropagation()"
+                        >
+                          {{ p.playerName }}
+                        </a>
+                        <span class="nfl-team mono">{{ p.nflTeam }}</span>
+                      </td>
+                      <td class="team-name">{{ p.teamName }}</td>
+                      <td>
+                        @if (p.isKeeper) {
+                          <span class="ch-chip is-jade">Keeper</span>
+                        } @else if (isAuction() && p.auctionAmount !== null) {
+                          <span class="ch-chip mono">${{ p.auctionAmount }}</span>
+                        } @else {
+                          <span class="muted">—</span>
+                        }
+                      </td>
+                      <td class="num strong-num">
+                        {{ p.seasonPoints > 0 ? p.seasonPoints.toFixed(1) : '—' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        } @else {
+          @for (recap of teamRecaps(); track recap.team.rosterId) {
+            <section
+              class="ch-card ch-stack span-4 recap-card"
+              [class.is-my-recap]="myRosterId() === recap.team.rosterId"
+            >
+              <div class="ch-row-between">
+                <a class="recap-team" [routerLink]="['/teams', recap.team.rosterId]">
+                  <span class="ch-avatar sz-40">
+                    @if (recap.team.avatarUrl) {
+                      <img [src]="recap.team.avatarUrl" [alt]="recap.team.teamName" />
+                    } @else {
+                      {{ recap.team.initials }}
+                    }
+                  </span>
+                  <div>
+                    <div class="ch-flex-row">
+                      <span class="team-name">{{ recap.team.teamName }}</span>
+                      <span class="ch-chip is-neutral mono">#{{ recap.classRank }}</span>
+                    </div>
+                    <div class="team-mgr mono">{{ recap.mixLabel || recap.pickCount + ' picks' }}</div>
+                  </div>
+                </a>
+                <span class="recap-pts mono">{{ recap.totalPoints.toFixed(0) }}p</span>
+              </div>
+
+              <div class="ch-meter">
+                <div class="ch-meter-fill" [style.width.%]="recap.pctOfLeader"></div>
+              </div>
+
+              <div class="ch-row-between recap-split mono">
+                <span>R1–5: {{ recap.earlyPoints.toFixed(0) }} pts</span>
+                <span>R6+: {{ recap.latePoints.toFixed(0) }} pts</span>
+              </div>
+
+              @if (recap.topPick; as top) {
+                <div class="ch-well ch-stack top-pick-well">
+                  <span class="ch-overline">Top Drafted Scorer</span>
+                  <div class="ch-row-between top-pick-row">
+                    <span>{{ top.playerName }} ({{ top.position }})</span>
+                    <span class="mono">{{ top.seasonPoints.toFixed(1) }}</span>
+                  </div>
+                </div>
+              }
+
+              <div class="ch-stack recap-picks">
+                @for (pk of recap.picks; track pk.pickNo) {
+                  <div class="recap-line">
+                    <span class="mono muted">{{ pk.pickLabel }}</span>
+                    <a
+                      class="line-name ch-player-link"
+                      [routerLink]="['/players']"
+                      [queryParams]="{ player: pk.playerId }"
+                    >
+                      {{ pk.playerName }}
+                    </a>
+                    <span class="ch-pos-pill mono" [attr.data-pos]="pk.position">{{ pk.position }}</span>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        }
+      </div>
+    }
+  </div>
+}

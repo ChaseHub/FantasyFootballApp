@@ -1,0 +1,452 @@
+<section class="ch-card roster-panel">
+  <div class="roster-head">
+    <div>
+      <span class="ch-overline">Personnel</span>
+      <h2 class="ch-section-title">Roster &amp; Weekly Lineup</h2>
+    </div>
+
+    <div class="ch-segmented" role="tablist" aria-label="Roster view">
+      <button
+        type="button"
+        class="ch-segment"
+        [class.is-active]="activeTab() === 'roster'"
+        (click)="setTab('roster')"
+      >
+        Active Roster ({{ rosterPlayers().length }})
+      </button>
+      <button
+        type="button"
+        class="ch-segment"
+        [class.is-active]="activeTab() === 'lineup'"
+        (click)="setTab('lineup')"
+      >
+        @if (activeWeekScore(); as wk) {
+          Wk {{ wk.week }} Lineup
+        } @else {
+          Weekly Lineup
+        }
+      </button>
+      <button
+        type="button"
+        class="ch-segment"
+        [class.is-active]="activeTab() === 'optimizer'"
+        (click)="setTab('optimizer')"
+      >
+        Start / Sit Lab
+        @if (optimization()?.swaps?.length; as swapCount) {
+          ({{ swapCount }})
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (playersLoading()) {
+    <div class="skeleton-rows">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <span class="ch-skeleton" style="height: 44px;"></span>
+      }
+    </div>
+  } @else if (activeTab() === 'roster') {
+    @if (rosterPlayers().length === 0) {
+      <div class="ch-well empty-state">No rostered players reported for this team.</div>
+    } @else {
+      <div class="filter-bar">
+        <button
+          type="button"
+          class="ch-chip filter-btn"
+          [class.is-jade]="posFilter() === 'ALL'"
+          [class.is-neutral]="posFilter() !== 'ALL'"
+          (click)="setPosFilter('ALL')"
+        >
+          All · {{ rosterPlayers().length }}
+        </button>
+        @for (pos of ['QB', 'RB', 'WR', 'TE', 'OTHER']; track pos) {
+          @let count = positionCounts()[pos === 'QB' || pos === 'RB' || pos === 'WR' || pos === 'TE' ? pos : 'OTHER'];
+          @if (count > 0) {
+            <button
+              type="button"
+              class="ch-chip filter-btn mono"
+              [class.is-jade]="posFilter() === pos"
+              [class.is-neutral]="posFilter() !== pos"
+              (click)="setPosFilter($any(pos))"
+            >
+              {{ pos === 'OTHER' ? 'K/DEF' : pos }} · {{ count }}
+            </button>
+          }
+        }
+      </div>
+
+      <!-- Mobile Card List -->
+      <div class="ch-mobile-feed mobile-roster-feed">
+        @for (player of filteredRosterPlayers(); track player.playerId) {
+          <a
+            class="ch-data-card ch-interactive"
+            [class.bench-card]="player.role !== 'starter'"
+            [routerLink]="['/players']"
+            [queryParams]="{ player: player.playerId }"
+          >
+            <div class="ch-row-between">
+              <div class="player-cell">
+                <span class="ch-pos-pill mono" [attr.data-pos]="player.position">{{ player.position }}</span>
+                <strong class="player-name">{{ player.name }}</strong>
+                <span class="player-team mono">{{ player.nflTeam }}</span>
+                @if (player.injuryStatus) {
+                  <span class="ch-chip is-warning">{{ player.injuryStatus }}</span>
+                }
+              </div>
+              <span
+                class="ch-chip"
+                [class.is-jade]="player.role === 'starter'"
+                [class.is-neutral]="player.role !== 'starter'"
+              >
+                {{ player.role === 'starter' ? 'Starter' : player.role === 'ir' ? 'IR' : 'Bench' }}
+              </span>
+            </div>
+
+            <div class="ch-data-card-metrics">
+              <div class="ch-data-metric">
+                <span class="ch-data-metric-lbl">Last Wk</span>
+                <span class="ch-data-metric-val mono">{{ player.lastWeekPoints !== null ? player.lastWeekPoints.toFixed(1) : '—' }}</span>
+              </div>
+              <div class="ch-data-metric">
+                <span class="ch-data-metric-lbl">PPG</span>
+                <span class="ch-data-metric-val mono">{{ player.gamesPlayed > 0 ? player.avgPoints.toFixed(1) : '—' }}</span>
+              </div>
+              <div class="ch-data-metric">
+                <span class="ch-data-metric-lbl">Season</span>
+                <span class="ch-data-metric-val mono">{{ player.gamesPlayed > 0 ? player.seasonPoints.toFixed(1) : '—' }}</span>
+              </div>
+            </div>
+          </a>
+        }
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+        <table class="ch-table">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Player</th>
+              <th>Slot</th>
+              <th class="num">Last Wk</th>
+              <th class="num">Avg</th>
+              <th class="num">Season</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (player of filteredRosterPlayers(); track player.playerId) {
+              <tr [class.bench-row]="player.role !== 'starter'">
+                <td>
+                  <span class="ch-pos-pill mono" [attr.data-pos]="player.position">{{ player.position }}</span>
+                </td>
+                <td>
+                  <div class="player-cell">
+                    <a
+                      class="ch-player-link"
+                      [routerLink]="['/players']"
+                      [queryParams]="{ player: player.playerId }"
+                    >
+                      {{ player.name }}
+                    </a>
+                    <span class="player-team mono">{{ player.nflTeam }}</span>
+                    @if (player.injuryStatus) {
+                      <span class="ch-chip is-warning">{{ player.injuryStatus }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span
+                    class="ch-chip"
+                    [class.is-jade]="player.role === 'starter'"
+                    [class.is-neutral]="player.role !== 'starter'"
+                  >
+                    {{ player.role === 'starter' ? 'Starter' : player.role === 'ir' ? 'IR' : 'Bench' }}
+                  </span>
+                </td>
+                <td class="num">
+                  {{ player.lastWeekPoints !== null ? player.lastWeekPoints.toFixed(2) : '—' }}
+                </td>
+                <td class="num">
+                  {{ player.gamesPlayed > 0 ? player.avgPoints.toFixed(2) : '—' }}
+                </td>
+                <td class="num strong-num">
+                  {{ player.gamesPlayed > 0 ? player.seasonPoints.toFixed(2) : '—' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else if (activeTab() === 'lineup') {
+    @if (activeWeekScore(); as wk) {
+      <div class="ch-well lineup-bar mono">
+        <div class="ch-row-between lineup-bar-main">
+          <span>
+            Week {{ wk.week }}
+            @if (wk.opponentName) {
+              · vs {{ wk.opponentName }}
+            }
+          </span>
+          <span>
+            Starters <strong>{{ wk.points.toFixed(2) }}</strong>
+            <span class="sep">·</span>
+            Bench <strong>{{ wk.benchPoints.toFixed(2) }}</strong>
+          </span>
+        </div>
+        @if (selectedWeek() !== null) {
+          <button type="button" class="ch-btn ch-btn-ghost reset-wk-btn" (click)="clearWeekRequested.emit()">
+            Reset filter
+          </button>
+        }
+      </div>
+
+      @if (weeklyLineup().length === 0) {
+        <div class="ch-well empty-state">No per-player scores recorded for Week {{ wk.week }}.</div>
+      } @else {
+        <div class="ch-mobile-feed mobile-roster-feed">
+          @for (entry of weeklyLineup(); track entry.playerId) {
+            <a
+              class="ch-data-card ch-interactive"
+              [class.bench-card]="!entry.isStarter"
+              [routerLink]="['/players']"
+              [queryParams]="{ player: entry.playerId }"
+            >
+              <div class="ch-row-between">
+                <div class="player-cell">
+                  <span class="ch-pos-pill mono" [attr.data-pos]="entry.position">{{ entry.position }}</span>
+                  <strong class="player-name">{{ entry.name }}</strong>
+                  <span class="player-team mono">{{ entry.nflTeam }}</span>
+                </div>
+                <div class="ch-flex-row">
+                  <span class="ch-chip" [class.is-jade]="entry.isStarter" [class.is-neutral]="!entry.isStarter">
+                    {{ entry.isStarter ? 'Started' : 'Bench' }}
+                  </span>
+                  <strong class="mono">{{ entry.points.toFixed(2) }}</strong>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+
+        <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+          <table class="ch-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Player</th>
+                <th>Status</th>
+                <th class="num">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of weeklyLineup(); track entry.playerId) {
+                <tr [class.bench-row]="!entry.isStarter">
+                  <td>
+                    <span class="ch-pos-pill mono" [attr.data-pos]="entry.position">{{ entry.position }}</span>
+                  </td>
+                  <td>
+                    <div class="player-cell">
+                      <a
+                        class="ch-player-link"
+                        [routerLink]="['/players']"
+                        [queryParams]="{ player: entry.playerId }"
+                      >
+                        {{ entry.name }}
+                      </a>
+                      <span class="player-team mono">{{ entry.nflTeam }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      class="ch-chip"
+                      [class.is-jade]="entry.isStarter"
+                      [class.is-neutral]="!entry.isStarter"
+                    >
+                      {{ entry.isStarter ? 'Started' : 'Bench' }}
+                    </span>
+                  </td>
+                  <td class="num strong-num">{{ entry.points.toFixed(2) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="ch-well empty-state">No scored weeks available yet.</div>
+    }
+  } @else {
+    @if (optimization(); as opt) {
+      <div class="optimizer-body">
+        <div class="ch-well optimizer-summary">
+          <div class="opt-kpis">
+            <div class="opt-kpi">
+              <span class="ch-overline">Current Wk {{ opt.week }}</span>
+              <strong class="mono opt-val">{{ opt.currentProjectedTotal.toFixed(1) }}</strong>
+            </div>
+            <div class="opt-kpi">
+              <span class="ch-overline">Optimal Lineup</span>
+              <strong class="mono opt-val is-jade">{{ opt.optimalProjectedTotal.toFixed(1) }}</strong>
+            </div>
+            <div class="opt-kpi">
+              <span class="ch-overline">Potential Edge</span>
+              <strong class="mono opt-val" [class.is-pos]="opt.potentialGain >= 0.5">
+                {{ opt.potentialGain > 0 ? '+' + opt.potentialGain.toFixed(1) : 'Optimal' }}
+              </strong>
+            </div>
+          </div>
+
+          <span class="ch-chip mono" [class.is-jade]="opt.isOptimal" [class.is-warning]="!opt.isOptimal">
+            @if (projectionsLoading()) {
+              Syncing Wk {{ opt.week }} projections...
+            } @else if (opt.usingProjectionFeed) {
+              Wk {{ opt.week }} Projections
+            } @else {
+              Season PPG Basis
+            }
+          </span>
+        </div>
+
+        @if (opt.criticalAlerts.length > 0) {
+          <div class="opt-alerts" role="status">
+            @for (alert of opt.criticalAlerts; track alert.playerId) {
+              <div class="opt-alert-pill">
+                <strong>Lineup Alert:</strong>
+                <span>
+                  {{ alert.name }} ({{ alert.position }} · {{ alert.nflTeam }}) is in a starting slot while
+                  <strong>{{ alert.isOnBye ? 'ON BYE' : alert.injuryStatus || 'OUT' }}</strong>
+                </span>
+              </div>
+            }
+          </div>
+        }
+
+        @if (opt.swaps.length > 0) {
+          <div class="opt-swaps">
+            @for (swap of opt.swaps; track swap.startPlayer.playerId) {
+              <div class="ch-well opt-swap-card">
+                <div class="ch-row-between swap-top">
+                  <span class="ch-chip is-jade mono">{{ swap.slotLabel }} Swap</span>
+                  <span class="swap-gain mono">+{{ swap.pointsGain.toFixed(1) }} pts</span>
+                </div>
+                <div class="swap-pair">
+                  <a
+                    class="ch-player-link swap-start"
+                    [routerLink]="['/players']"
+                    [queryParams]="{ player: swap.startPlayer.playerId }"
+                  >
+                    Start {{ swap.startPlayer.name }} ({{ swap.startPlayer.effectivePoints.toFixed(1) }})
+                  </a>
+                  @if (swap.sitPlayer; as sit) {
+                    <span class="swap-sit">
+                      over {{ sit.name }} ({{ sit.effectivePoints.toFixed(1) }})
+                    </span>
+                  }
+                </div>
+                <span class="swap-reason">{{ swap.reason }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="ch-well opt-locked">
+            <strong>Lineup Optimized:</strong> Current starters already project highest for Week {{ opt.week }}.
+          </div>
+        }
+
+        <!-- Mobile Slot Cards -->
+        <div class="ch-mobile-feed">
+          @for (slot of opt.slots; track slot.slotIndex) {
+            <div class="ch-data-card" [class.is-highlighted]="slot.changed">
+              <div class="ch-row-between">
+                <span class="ch-pos-pill mono" [attr.data-pos]="slot.optimalPlayer?.position ?? slot.slotLabel">
+                  {{ slot.slotLabel }}
+                </span>
+                @if (slot.pointsDelta > 0.05) {
+                  <span class="swap-gain mono">+{{ slot.pointsDelta.toFixed(1) }} edge</span>
+                } @else {
+                  <span class="player-team mono">Locked</span>
+                }
+              </div>
+
+              @if (slot.optimalPlayer; as rec) {
+                <div class="ch-row-between">
+                  <a class="ch-player-link" [routerLink]="['/players']" [queryParams]="{ player: rec.playerId }">
+                    {{ rec.name }} ({{ rec.nflTeam }})
+                  </a>
+                  <strong class="mono">{{ rec.effectivePoints.toFixed(1) }}</strong>
+                </div>
+              }
+
+              @if (slot.changed && slot.currentPlayer; as cur) {
+                <span class="swap-sit mono">Replaces: {{ cur.name }} ({{ cur.effectivePoints.toFixed(1) }})</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+          <table class="ch-table">
+            <thead>
+              <tr>
+                <th>Slot</th>
+                <th>Current Starter</th>
+                <th>Recommended</th>
+                <th class="num">Proj</th>
+                <th class="num">Gain</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (slot of opt.slots; track slot.slotIndex) {
+                <tr [class.is-upgraded-slot]="slot.changed">
+                  <td>
+                    <span class="ch-pos-pill mono" [attr.data-pos]="slot.optimalPlayer?.position ?? slot.slotLabel">
+                      {{ slot.slotLabel }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (slot.currentPlayer; as cur) {
+                      <div class="player-cell">
+                        <span [class.sit-strike]="slot.changed">{{ cur.name }}</span>
+                        <span class="player-team mono">{{ cur.effectivePoints.toFixed(1) }}</span>
+                      </div>
+                    } @else {
+                      <span class="player-team">Empty</span>
+                    }
+                  </td>
+                  <td>
+                    @if (slot.optimalPlayer; as rec) {
+                      <div class="player-cell">
+                        <a
+                          class="ch-player-link"
+                          [routerLink]="['/players']"
+                          [queryParams]="{ player: rec.playerId }"
+                        >
+                          {{ rec.name }}
+                        </a>
+                        <span class="player-team mono">{{ rec.nflTeam }}</span>
+                      </div>
+                    } @else {
+                      <span class="player-team">—</span>
+                    }
+                  </td>
+                  <td class="num strong-num">
+                    {{ slot.optimalPlayer ? slot.optimalPlayer.effectivePoints.toFixed(1) : '—' }}
+                  </td>
+                  <td class="num">
+                    @if (slot.pointsDelta > 0.05) {
+                      <span class="swap-gain mono">+{{ slot.pointsDelta.toFixed(1) }}</span>
+                    } @else {
+                      <span class="player-team">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+</section>

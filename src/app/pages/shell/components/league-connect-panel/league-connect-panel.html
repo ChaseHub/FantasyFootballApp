@@ -1,0 +1,138 @@
+<section class="connect-shell ch-enter" [class.is-modal]="isModal()">
+  <div class="ch-bento">
+    <div class="ch-feature span-7 connect-hero">
+      <div class="hero-top">
+        <span class="ch-overline dark-overline">Sleeper League Connection</span>
+        @if (isModal()) {
+          <button type="button" class="close-btn" (click)="closed.emit()" aria-label="Close">
+            Close
+          </button>
+        }
+      </div>
+
+      <h1 class="hero-heading">Connect your Sleeper league.</h1>
+      <p class="hero-copy">
+        Pull live rosters, weekly matchups, standings, and player scoring directly from the public
+        Sleeper API. Your league ID is saved locally so refreshes stay synced.
+      </p>
+
+      @if (!isModal()) {
+        <div class="connect-highlights">
+          <div class="ch-feature-tile">
+            <span class="ch-team-hero-stat">Live Sunday Desk</span>
+            <strong class="highlight-title">Watch Party &amp; Win Odds</strong>
+          </div>
+          <div class="ch-feature-tile">
+            <span class="ch-team-hero-stat">Alternate Scenarios</span>
+            <strong class="highlight-title">Schedule Swaps &amp; Median Lab</strong>
+          </div>
+          <div class="ch-feature-tile">
+            <span class="ch-team-hero-stat">Deep Scouting</span>
+            <strong class="highlight-title">Player Game Logs &amp; Trades</strong>
+          </div>
+        </div>
+      }
+
+      <form class="connect-form" (ngSubmit)="findLeagues()">
+        <label class="form-label" for="sleeper-username">Find leagues by Sleeper username</label>
+        <div class="lookup-row">
+          <input
+            id="sleeper-username"
+            class="ch-input dark-input"
+            type="text"
+            name="username"
+            [ngModel]="usernameInput()"
+            (ngModelChange)="usernameInput.set($event)"
+            placeholder="Enter Sleeper username"
+          />
+          <app-picker
+            class="season-picker"
+            [options]="seasonPickerOptions()"
+            [value]="seasonInput()"
+            tone="dark"
+            ariaLabel="NFL Season"
+            sheetTitle="Select NFL Season"
+            (valueChange)="seasonInput.set($event)"
+          />
+          <button
+            type="submit"
+            class="ch-btn signal-btn"
+            [disabled]="sleeper.lookupLoading() || !usernameInput().trim()"
+          >
+            {{ sleeper.lookupLoading() ? 'Searching...' : 'Search' }}
+          </button>
+        </div>
+      </form>
+
+      @if (sleeper.lookupError(); as lErr) {
+        <div class="dark-error">{{ lErr }}</div>
+      }
+
+      @if (sleeper.discoveredLeagues().length > 0) {
+        <div class="discovered-wrap">
+          <div class="ch-overline dark-overline">
+            Leagues for @{{ sleeper.discoveredUser()?.display_name || sleeper.discoveredUser()?.username }}
+          </div>
+          <div class="league-list">
+            @for (item of sleeper.discoveredLeagues(); track item.league_id) {
+              <button
+                type="button"
+                class="ch-feature-tile league-row"
+                [disabled]="sleeper.loading()"
+                (click)="selectLeague(item.league_id)"
+              >
+                <span class="league-row-main">
+                  <span class="league-row-name">{{ item.name }}</span>
+                  <span class="league-row-meta mono">
+                    {{ item.total_rosters }} teams · {{ item.season }} · {{ item.status }}
+                  </span>
+                </span>
+                <span class="league-row-action">Open →</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="ch-card span-5 direct-card">
+      <span class="ch-overline">Direct Access</span>
+      <h2 class="ch-section-title">Load by League ID</h2>
+      <p class="direct-copy">
+        Already have your Sleeper League ID? Paste the numeric ID below to load the full season
+        immediately.
+      </p>
+
+      <form class="direct-form" (ngSubmit)="submitLeagueId()">
+        <label class="field-caption" for="sleeper-league-id">League ID</label>
+        <input
+          id="sleeper-league-id"
+          class="ch-input mono"
+          type="text"
+          name="leagueId"
+          [ngModel]="leagueIdInput()"
+          (ngModelChange)="leagueIdInput.set($event)"
+          placeholder="e.g. 1124839102837465088"
+        />
+        <button
+          type="submit"
+          class="ch-btn ch-btn-primary"
+          [disabled]="sleeper.loading() || !leagueIdInput().trim()"
+        >
+          {{ sleeper.loading() ? 'Loading league...' : 'Load League' }}
+        </button>
+      </form>
+
+      @if (sleeper.error(); as err) {
+        <div class="ch-error-banner">{{ err }}</div>
+      }
+
+      <div class="ch-well tip-well">
+        <span class="tip-title">Where to find it</span>
+        <span class="tip-body">
+          Open Sleeper → League → Settings (gear icon) → General → copy the League ID at the bottom.
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

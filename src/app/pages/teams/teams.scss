@@ -1,0 +1,409 @@
+@use 'mixins' as *;
+
+.teams-page {
+  gap: var(--page-gap);
+}
+
+.empty-card {
+  text-align: center;
+  padding: 40px var(--space-6);
+
+  p {
+    margin: var(--space-2) 0 0;
+    color: var(--ink-secondary);
+  }
+}
+
+.league-snap,
+.team-hero {
+  gap: var(--space-4);
+
+  @include mq(md) {
+    gap: var(--space-5);
+  }
+}
+
+.live-strip {
+  padding: 14px var(--space-4);
+  gap: 10px;
+}
+
+.snap-top {
+  @include row(12px, flex-end, space-between, wrap);
+}
+
+.snap-title {
+  margin: var(--space-1) 0 0;
+  font-size: clamp(19px, 2.2vw, 24px);
+  color: var(--on-graphite);
+}
+
+.snap-pin-cta {
+  width: 100%;
+
+  @include mq(sm) {
+    width: auto;
+  }
+}
+
+.snap-link {
+  @include stack(var(--space-1));
+}
+
+.snap-name {
+  font-size: 15.5px;
+  @include truncate;
+}
+
+/* Mobile-First Franchise Directory Grid */
+.dir-cards-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+
+  @include mq(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include mq(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include mq('2xl') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.detail-grid {
+  gap: var(--grid-gap);
+}
+
+.detail-nav {
+  @include row(8px, center, space-between, wrap);
+}
+
+.detail-nav-right {
+  @include row(8px, center);
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.ch-team-tile {
+  @include stack(var(--space-3));
+  padding: 16px;
+
+  @include mq(md) {
+    padding: 18px var(--space-5);
+  }
+
+  &.is-pinned {
+    border-color: var(--jade);
+    box-shadow: inset 0 0 0 1px var(--jade);
+  }
+
+  &.is-playoff-line {
+    border-bottom: 2px dashed var(--brass);
+  }
+}
+
+.tile-identity {
+  @include row(var(--space-3), center);
+  min-width: 0;
+}
+
+.tile-names,
+.tile-metric {
+  min-width: 0;
+  gap: 2px;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 700;
+  @include truncate;
+}
+
+.manager-name {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.ch-team-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: 9px 11px;
+}
+
+.tile-metric strong {
+  font-size: 14px;
+}
+
+.tile-metric-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+
+.tile-meter-wrap {
+  gap: 5px;
+}
+
+.meter-caption {
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
+.pos-val {
+  color: var(--positive);
+  font-weight: 600;
+}
+
+.neg-val {
+  color: var(--negative);
+  font-weight: 600;
+}
+
+.tile-foot {
+  @include row(var(--space-2), center, space-between);
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.tile-week {
+  color: var(--ink-muted);
+  @include truncate;
+}
+
+.open-cue {
+  color: var(--jade);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Team Detail Hero */
+.hero-top {
+  @include row(var(--space-4), flex-start, space-between, wrap);
+}
+
+.hero-identity {
+  @include row(var(--space-3), center);
+  min-width: 0;
+
+  @include mq(md) {
+    gap: 18px;
+  }
+}
+
+@include mq(md) {
+  .detail-avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 20px;
+    border-radius: var(--r-md);
+  }
+}
+
+.hero-title-wrap {
+  min-width: 0;
+}
+
+.hero-badges {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.hero-team-name {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 32px);
+  color: var(--on-graphite);
+  letter-spacing: -0.025em;
+}
+
+.hero-sub {
+  margin-top: var(--space-1);
+  font-size: 13px;
+  color: var(--on-graphite-muted);
+}
+
+.hero-actions {
+  @include stack(10px);
+  width: 100%;
+
+  @include mq(md) {
+    width: auto;
+    align-items: flex-end;
+  }
+}
+
+.hero-record-well {
+  width: 100%;
+
+  @include mq(md) {
+    width: auto;
+  }
+}
+
+.rw-value {
+  font-size: 17px;
+  color: var(--on-graphite);
+
+  @include mq(md) {
+    font-size: 18px;
+  }
+}
+
+.pin-btn {
+  min-height: 38px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--on-graphite-border-strong);
+  background: var(--on-graphite-tint);
+  color: var(--on-graphite);
+  font: 600 12.5px var(--font-sans);
+  cursor: pointer;
+  align-self: flex-start;
+
+  @include mq(md) {
+    align-self: flex-end;
+  }
+
+  &.is-pinned {
+    background: var(--jade);
+    border-color: var(--jade);
+    color: var(--on-accent);
+  }
+}
+
+.live-vs {
+  @include row(6px, center, flex-start, wrap);
+  font-size: 14px;
+}
+
+.score-pair {
+  font-size: 15px;
+}
+
+.inspect-banner {
+  @include row(10px, center, space-between, wrap);
+  padding: 10px var(--space-4);
+  border-color: var(--jade);
+  background: var(--jade-soft);
+  font-size: 12.5px;
+}
+
+.hi-lo-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.ch-hi-lo-btn {
+  @include stack(2px);
+  align-items: flex-start;
+  padding: var(--space-2) 10px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  cursor: pointer;
+  text-align: left;
+
+  strong {
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  &.is-win strong {
+    color: var(--positive);
+  }
+
+  &.is-loss strong {
+    color: var(--negative);
+  }
+
+  &:hover {
+    border-color: var(--jade);
+  }
+}
+
+.stat-big {
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.stat-caption {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  line-height: 1.4;
+}
+
+.stat-sub {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: auto;
+}
+
+.hi-lo-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.history-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.history-head {
+  padding: 16px 16px var(--space-2);
+
+  @include mq(md) {
+    padding: var(--space-5) 22px var(--space-3);
+  }
+}
+
+.history-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.empty-history {
+  margin: 0 16px 16px;
+  text-align: center;
+  font-size: 13.5px;
+
+  @include mq(md) {
+    margin: 0 22px 22px;
+  }
+}
+
+.history-row {
+  cursor: pointer;
+}
+
+.is-selected-row {
+  background: var(--jade-soft);
+}
+
+.opp-link {
+  font-weight: 600;
+
+  &:hover {
+    color: var(--jade);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.opp-pts,
+.muted {
+  color: var(--ink-muted);
+}

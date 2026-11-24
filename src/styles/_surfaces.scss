@@ -1,0 +1,149 @@
+@use 'mixins' as *;
+
+@layer surfaces {
+  .ch-cq {
+    container-type: inline-size;
+  }
+
+  .ch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    padding: var(--card-pad);
+    min-width: 0;
+  }
+
+  .ch-card-interactive,
+  .ch-interactive {
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out;
+    cursor: pointer;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card-hover);
+        border-color: var(--border-strong);
+      }
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+  }
+
+  .ch-feature {
+    background: var(--graphite);
+    color: var(--on-graphite);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-feature);
+    padding: var(--feature-pad);
+    min-width: 0;
+
+    .ch-btn-primary {
+      background: var(--signal);
+      color: var(--graphite);
+
+      &:not(:disabled):hover {
+        background: var(--signal-hover);
+        color: var(--graphite);
+      }
+    }
+
+    .ch-btn-secondary {
+      background: var(--graphite-raised);
+      border-color: var(--on-graphite-border-strong);
+      color: var(--on-graphite);
+
+      &:not(:disabled):hover {
+        background: var(--graphite-hover);
+        border-color: var(--signal-border);
+      }
+    }
+
+    .ch-btn-ghost {
+      color: var(--on-graphite-muted);
+
+      &:not(:disabled):hover {
+        background: var(--on-graphite-tint);
+        color: var(--on-graphite);
+      }
+    }
+  }
+
+  .ch-feature-tile {
+    background: var(--graphite-raised);
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    padding: 14px;
+    min-width: 0;
+
+    @include mq(md) {
+      padding: var(--space-4);
+    }
+  }
+
+  a.ch-feature-tile,
+  button.ch-feature-tile {
+    text-align: left;
+    transition: transform 140ms ease-out, border-color 140ms ease-out, background 140ms ease-out;
+    cursor: pointer;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-2px);
+        background: var(--graphite-hover);
+        border-color: var(--signal-border);
+      }
+    }
+  }
+
+  .ch-well {
+    background: var(--surface-recessed);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-recessed);
+    padding: 12px 14px;
+
+    @include mq(md) {
+      padding: 14px var(--space-4);
+    }
+  }
+
+  .ch-stat-tile {
+    @include stack(6px);
+    padding: 14px var(--space-4);
+  }
+
+  .ch-team-hero-stat {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--on-graphite-muted);
+  }
+
+  .ch-team-hero-val {
+    display: block;
+    margin-top: 5px;
+    font-size: clamp(17px, 2vw, 21px);
+    line-height: 1.2;
+    color: var(--on-graphite);
+  }
+
+  .ch-team-hero-sub {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--on-graphite-muted);
+  }
+
+  .ch-record-well {
+    @include row(14px, center, space-between, wrap);
+    padding: 11px var(--space-4);
+    border-radius: var(--r-sm);
+    background: var(--on-graphite-tint);
+    border: 1px solid var(--on-graphite-border);
+  }
+}

@@ -1,0 +1,28 @@
+<header class="ch-page-header">
+  <div class="header-copy">
+    @if (overline()) {
+      <span class="ch-overline">{{ overline() }}</span>
+    }
+    <div class="title-row">
+      <h1 class="ch-page-title">{{ title() }}</h1>
+      @if (meta()) {
+        <span class="ch-chip is-neutral mono mobile-meta-chip ch-mobile-only">{{ meta() }}</span>
+      }
+    </div>
+    @if (mobileContext() || context()) {
+      @if (mobileContext()) {
+        <p class="head-context ch-mobile-only">{{ mobileContext() }}</p>
+        <p class="head-context ch-desktop-only">{{ context() }}</p>
+      } @else {
+        <p class="head-context">{{ context() }}</p>
+      }
+    }
+  </div>
+
+  <div class="header-actions">
+    @if (meta()) {
+      <span class="refresh-meta mono ch-desktop-only">{{ meta() }}</span>
+    }
+    <ng-content />
+  </div>
+</header>

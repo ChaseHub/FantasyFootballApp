@@ -1,0 +1,73 @@
+<section class="ch-card filter-bar">
+  <div class="bar-top">
+    @if (showSearch()) {
+      <div class="search-wrap">
+        <input
+          class="ch-input search-input"
+          type="search"
+          [attr.aria-label]="searchPlaceholder()"
+          [placeholder]="searchPlaceholder()"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQueryChange.emit($event)"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            class="clear-btn"
+            aria-label="Clear search"
+            (click)="searchQueryChange.emit('')"
+          >
+            ✕
+          </button>
+        }
+      </div>
+    }
+
+    <div class="mobile-triggers ch-mobile-only">
+      <button
+        type="button"
+        class="ch-btn ch-btn-secondary filter-trigger-btn"
+        [class.has-filters]="activeFilterCount() > 0"
+        (click)="openSheet()"
+      >
+        <span>Filters</span>
+        @if (activeFilterCount() > 0) {
+          <span class="ch-chip is-jade mono count-badge">{{ activeFilterCount() }}</span>
+        }
+      </button>
+
+      @if (activeFilterCount() > 0 || searchQuery()) {
+        <button type="button" class="ch-btn ch-btn-ghost reset-btn" (click)="clearAll.emit()">
+          Reset
+        </button>
+      }
+    </div>
+
+    @if (resultLabel()) {
+      <span class="result-label mono">{{ resultLabel() }}</span>
+    }
+  </div>
+
+  @if (sheetOpen()) {
+    <div class="mobile-scrim ch-mobile-only" (click)="closeSheet()"></div>
+  }
+
+  <div class="drawer-body" [class.is-open]="sheetOpen()">
+    <div class="drawer-handle-row ch-mobile-only" aria-hidden="true">
+      <span class="drawer-handle"></span>
+    </div>
+    <div class="drawer-head ch-mobile-only">
+      <h2 class="drawer-title">{{ sheetTitle() }}</h2>
+      <div class="drawer-head-actions">
+        @if (activeFilterCount() > 0) {
+          <button type="button" class="ch-btn ch-btn-ghost" (click)="clearAll.emit()">Reset</button>
+        }
+        <button type="button" class="ch-btn ch-btn-primary" (click)="closeSheet()">Done</button>
+      </div>
+    </div>
+
+    <div class="controls-slot">
+      <ng-content />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,210 @@
+@use 'mixins' as *;
+
+@layer layout {
+  .ch-page {
+    gap: var(--page-gap);
+  }
+
+  .ch-stack {
+    @include stack(0);
+  }
+
+  .ch-row-between {
+    @include row(var(--space-2), center, space-between);
+  }
+
+  .ch-flex-row {
+    @include row(var(--space-2), center, flex-start, wrap);
+  }
+
+  .ch-page-head,
+  .page-head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+
+    @include mq(md) {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+  }
+
+  .ch-page-sub,
+  .head-context {
+    margin: var(--space-1) 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-secondary);
+
+    @include mq(md) {
+      font-size: 13.5px;
+    }
+  }
+
+  .refresh-meta {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+  }
+
+  /* Mobile-First Bento Grid: 1 col base -> 6 col md -> 12 col xl */
+  .ch-bento {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--grid-gap);
+
+    @include mq(md) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    @include mq(lg) {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+  }
+
+  .span-12,
+  .span-8,
+  .span-7,
+  .span-6,
+  .span-5,
+  .span-4,
+  .span-3 {
+    grid-column: span 1;
+    min-width: 0;
+  }
+
+  @include mq(md) {
+    .span-12,
+    .span-8,
+    .span-7,
+    .span-6,
+    .span-5 {
+      grid-column: span 6;
+    }
+
+    .span-4,
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-md-3 {
+      grid-column: span 3;
+    }
+
+    .span-md-6 {
+      grid-column: span 6;
+    }
+  }
+
+  @include mq(lg) {
+    .span-12 {
+      grid-column: span 12;
+    }
+    .span-8 {
+      grid-column: span 8;
+    }
+    .span-7 {
+      grid-column: span 7;
+    }
+    .span-6 {
+      grid-column: span 6;
+    }
+    .span-5 {
+      grid-column: span 5;
+    }
+    .span-4 {
+      grid-column: span 4;
+    }
+    .span-3 {
+      grid-column: span 3;
+    }
+  }
+
+  @include mq('2xl') {
+    .ch-bento > .span-4-4k {
+      grid-column: span 4;
+    }
+
+    .ch-bento > .span-3-4k,
+    .ch-bento.is-directory > .span-4 {
+      grid-column: span 3;
+    }
+  }
+
+  /* Stat Strips: Horizontal snap peek rail on mobile -> 2x2 md -> 4-up lg */
+  .ch-stat-strip-4 {
+    @include scroll-rail(var(--space-2));
+    scroll-snap-type: x mandatory;
+    padding-bottom: 2px;
+
+    > * {
+      flex: 0 0 min(68%, 220px);
+      min-width: 0;
+      scroll-snap-align: start;
+    }
+
+    @include mq(md) {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+      overflow: visible;
+      padding-bottom: 0;
+    }
+
+    @include mq(lg) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .ch-stat-grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+
+    @include mq(sm) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+}
+
+@layer utilities {
+  .ch-mobile-only {
+    @include mq(md) {
+      display: none !important;
+    }
+  }
+
+  .ch-desktop-only {
+    display: none !important;
+
+    @include mq(md) {
+      display: block !important;
+    }
+  }
+
+  .ch-desktop-flex {
+    display: none !important;
+
+    @include mq(md) {
+      display: flex !important;
+    }
+  }
+
+  .ch-below-lg {
+    @include mq(lg) {
+      display: none !important;
+    }
+  }
+
+  .ch-lg-up {
+    display: none !important;
+
+    @include mq(lg) {
+      display: block !important;
+    }
+  }
+}

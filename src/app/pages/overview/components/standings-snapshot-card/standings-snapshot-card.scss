@@ -1,0 +1,155 @@
+@use 'mixins' as *;
+
+.snapshot-card {
+  padding: 0;
+  overflow: hidden;
+  @include stack(0);
+}
+
+.snapshot-header {
+  padding: 16px 16px 12px;
+  @include row(12px, flex-end, space-between);
+
+  @include mq(md) {
+    padding: 22px 26px 16px;
+  }
+}
+
+.full-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jade);
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--jade-hover);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* Mobile Snapshot List */
+.mobile-snapshot {
+  padding: 0 12px 14px;
+}
+
+.snap-mobile-row {
+  @include row(10px, center, space-between);
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+
+  &.is-my-row {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+}
+
+.snap-left {
+  @include row(10px, center);
+  min-width: 0;
+  flex: 1;
+}
+
+.snap-rank {
+  width: 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.snap-id {
+  @include stack(1px);
+  min-width: 0;
+}
+
+.snap-name-line {
+  @include row(6px, center);
+  min-width: 0;
+}
+
+.snap-rec {
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+}
+
+.snap-right {
+  @include row(8px, center);
+  flex-shrink: 0;
+}
+
+.snap-pf {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.snap-streak {
+  font-size: 11px;
+  min-height: 22px;
+  padding: 1px 7px;
+}
+
+.cutoff-line {
+  margin: 4px 2px;
+  padding: 3px 0;
+  border-top: 1px dashed var(--border-strong);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+/* Desktop Table */
+.snapshot-table {
+  min-width: 500px;
+
+  th:first-child,
+  td:first-child {
+    padding-left: 24px;
+    width: 44px;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 24px;
+  }
+}
+
+.rank-cell {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.team-cell {
+  @include row(10px, center);
+  min-width: 0;
+}
+
+.team-name {
+  font-weight: 600;
+  @include truncate;
+}
+
+.strong-num {
+  font-weight: 600;
+}
+
+.muted-num {
+  color: var(--ink-secondary);
+}
+
+.playoff-edge td {
+  border-bottom: 1px dashed var(--border-strong);
+}
+
+.is-my-row {
+  background: var(--jade-soft);
+}

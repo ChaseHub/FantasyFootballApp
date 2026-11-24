@@ -1,0 +1,136 @@
+@layer tokens {
+  :root {
+    /* Surface & Canvas Foundations */
+    --canvas: #f4f2ed;
+    --surface: #fffefb;
+    --surface-soft: #f7f7f2;
+    --surface-recessed: #ebede7;
+    --border: #d8ddd7;
+    --border-strong: #b8c5bd;
+    --ink: #172322;
+    --ink-secondary: #4f615c;
+    --ink-muted: #617069;
+
+    /* Identity & High-Contrast Surfaces */
+    --jade: #205d50;
+    --jade-hover: #174a40;
+    --jade-soft: #e4efe9;
+    --jade-tint-24: rgba(31, 122, 92, 0.24);
+    --jade-tint-36: rgba(31, 122, 92, 0.36);
+    --graphite: #1b2926;
+    --graphite-raised: #2a3a35;
+    --graphite-hover: #33453f;
+    --on-graphite: #f9f8f2;
+    --on-graphite-muted: #b9c9c1;
+    --on-graphite-subtle: rgba(249, 248, 242, 0.45);
+    --on-graphite-tint: rgba(255, 255, 255, 0.06);
+    --on-graphite-tint-subtle: rgba(255, 255, 255, 0.04);
+    --on-graphite-tint-hover: rgba(255, 255, 255, 0.14);
+    --on-graphite-border: rgba(249, 248, 242, 0.14);
+    --on-graphite-border-subtle: rgba(249, 248, 242, 0.1);
+    --on-graphite-border-strong: rgba(249, 248, 242, 0.24);
+    --signal: #d8ea94;
+    --signal-hover: #e5f3b0;
+    --signal-border: rgba(216, 234, 148, 0.4);
+    --brass: #b38d59;
+    --on-accent: #ffffff;
+
+    /* Semantic Status */
+    --positive: #206846;
+    --positive-soft: #e6f2e9;
+    --negative: #a63d36;
+    --negative-soft: #f8e9e5;
+    --negative-border: rgba(166, 61, 54, 0.25);
+    --on-graphite-danger: #f3a19b;
+    --on-graphite-danger-bg: rgba(166, 61, 54, 0.24);
+    --on-graphite-danger-border: rgba(248, 233, 229, 0.25);
+    --danger-pill: #c95148;
+    --warning: #8b5a22;
+    --warning-soft: #f6eedf;
+    --neutral-soft: #e9ece7;
+    --neutral-bar: #94a3b8;
+    --loss-bar: #b89a95;
+    --scrim: rgba(23, 35, 34, 0.48);
+    --btn-primary-bg: var(--graphite);
+    --btn-primary-fg: var(--on-graphite);
+
+    /* NFL Position Palette */
+    --pos-qb: #a63d36;
+    --pos-qb-bg: #fcf7f6;
+    --pos-rb: #205d50;
+    --pos-rb-bg: #f5faf7;
+    --pos-wr: #2c5a71;
+    --pos-wr-soft: #e5eff4;
+    --pos-wr-bg: #f5f9fb;
+    --pos-te: #8b5a22;
+    --pos-te-bg: #fbf8f2;
+
+    /* Charts */
+    --chart-primary: var(--jade);
+    --chart-secondary: #91ab9d;
+    --chart-ref: var(--border-strong);
+    --chart-tertiary: var(--brass);
+
+    /* Typography & Fluid Scale */
+    --font-sans: 'Manrope', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    --text-hero: clamp(2.125rem, 5.5vw, 4rem);
+    --text-title: clamp(1.625rem, 3.2vw, 2.5rem);
+    --text-section: clamp(1.125rem, 1.9vw, 1.375rem);
+    --text-card: clamp(0.9375rem, 1.2vw, 1.0625rem);
+
+    /* Fluid Spacing & Layout Scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --page-gap: clamp(14px, 1.4vw, 20px);
+    --grid-gap: clamp(12px, 1.3vw, 22px);
+    --card-pad: clamp(16px, 2vw, 26px);
+    --feature-pad: clamp(18px, 2.3vw, 30px);
+    --canvas-max: 1680px;
+    --canvas-pad-x: clamp(14px, 2.5vw, 48px);
+    --canvas-pad-y: clamp(16px, 2.2vw, 36px);
+    --rail-w: 244px;
+    --rail-compact-w: 72px;
+    --mobile-topbar-h: 56px;
+    --mobile-dock-h: 64px;
+
+    /* Layer Z-Index Scale */
+    --z-sticky: 20;
+    --z-shell: 40;
+    --z-dock: 50;
+    --z-sheet: 70;
+    --z-popover: 80;
+    --z-toast: 90;
+
+    /* Radii */
+    --r-xs: 8px;
+    --r-sm: 12px;
+    --r-md: 16px;
+    --r-lg: 22px;
+    --r-xl: 28px;
+    --r-pill: 999px;
+
+    /* Elevation */
+    --shadow-card: 0 2px 4px rgba(23, 35, 34, 0.025), 0 14px 34px rgba(23, 35, 34, 0.055);
+    --shadow-card-hover: 0 4px 10px rgba(23, 35, 34, 0.045), 0 18px 38px rgba(23, 35, 34, 0.08);
+    --shadow-feature: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 42px rgba(23, 35, 34, 0.16);
+    --shadow-sheet: 0 24px 64px rgba(23, 35, 34, 0.25);
+    --shadow-raised: 3px 3px 8px rgba(23, 35, 34, 0.08), -3px -3px 8px rgba(255, 255, 255, 0.86);
+    --shadow-recessed: inset 2px 2px 5px rgba(23, 35, 34, 0.07), inset -2px -2px 5px rgba(255, 255, 255, 0.82);
+    --shadow-control: 0 1px 3px rgba(23, 35, 34, 0.08);
+
+    /* Motion */
+    --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-density='compact'] {
+    --page-gap: clamp(10px, 1vw, 14px);
+    --grid-gap: clamp(10px, 1vw, 14px);
+    --card-pad: clamp(12px, 1.5vw, 18px);
+    --feature-pad: clamp(14px, 1.8vw, 22px);
+  }
+}

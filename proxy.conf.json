@@ -1,0 +1,26 @@
+{
+  "/sleeper-projections": {
+    "target": "https://api.sleeper.app/projections/nfl",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/sleeper-projections": ""
+    }
+  },
+  "/espn-nfl": {
+    "target": "https://site.api.espn.com/apis/site/v2/sports/football/nfl",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/espn-nfl": ""
+    }
+  },
+  "/espn-core": {
+    "target": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/espn-core": ""
+    }
+  }
+}

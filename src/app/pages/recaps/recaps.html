@@ -1,0 +1,247 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack recaps-page">
+    <div class="ch-stack">
+      <span class="ch-skeleton" style="width: 240px; height: 32px;"></span>
+      <span class="ch-skeleton" style="width: 280px; height: 36px;"></span>
+    </div>
+    <span class="ch-skeleton-dark" style="height: 175px;"></span>
+    <span class="ch-skeleton" style="height: 300px;"></span>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack recaps-page ch-enter">
+    <app-page-header
+      [overline]="'The Clubhouse Gazette · ' + data.league.season"
+      title="Weekly Recaps"
+      [context]="
+        'Auto-generated weekly gazettes, boom performances, upsets, and league chat summaries for ' +
+        data.league.name +
+        '.'
+      "
+      mobileContext="Gazette awards, upsets & boom players"
+    >
+      <div class="recap-controls">
+        @if (availableWeeks().length > 0) {
+          <app-week-stepper
+            [week]="activeWeek()"
+            [weeks]="availableWeeks()"
+            prefix="Wk"
+            (weekChange)="selectWeek($event)"
+          />
+        }
+
+        <div class="ch-flex-row action-row">
+          @if (digest()) {
+            <button
+              type="button"
+              class="ch-btn ch-btn-primary is-compact"
+              (click)="copyChatSummary()"
+            >
+              Copy Gazette
+            </button>
+          }
+
+          <button
+            type="button"
+            class="ch-btn ch-btn-ghost is-compact ch-desktop-only"
+            (click)="copyShareLink()"
+          >
+            Share Link
+          </button>
+        </div>
+      </div>
+    </app-page-header>
+
+    @if (seasonArchive().length > 0) {
+      <section class="ch-card ch-stack archive-card">
+        <div class="ch-row-between archive-head">
+          <div>
+            <span class="ch-overline">Season Timeline</span>
+            <h2 class="ch-section-title">Weekly Crown Archive</h2>
+          </div>
+          <span class="muted-note mono">{{ seasonArchive().length }} weeks</span>
+        </div>
+
+        <div class="archive-shelf">
+          @for (item of seasonArchive(); track item.week) {
+            <button
+              type="button"
+              class="ch-well ch-stack archive-pill"
+              [class.is-selected-edition]="item.week === activeWeek()"
+              (click)="selectWeek(item.week)"
+            >
+              <div class="ch-row-between">
+                <span class="ch-overline">Wk {{ item.week }}</span>
+                <strong class="arch-pts mono">{{ item.points.toFixed(1) }}</strong>
+              </div>
+              <span class="arch-team">{{ item.teamName }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    @if (digest(); as rec) {
+      <section class="ch-feature ch-stack recap-hero">
+        <div class="ch-row-between hero-head">
+          <div>
+            <span class="ch-overline dark-overline">
+              {{ rec.isCompleted ? 'Official Final Edition' : 'In-Progress Slate' }} · Week {{ rec.week }}
+            </span>
+            <h2 class="hero-title">Week {{ rec.week }} Clubhouse Gazette</h2>
+          </div>
+
+          <div class="ch-flex-row">
+            <span class="ch-chip is-signal mono">League Avg {{ rec.leagueAverage.toFixed(1) }}</span>
+            <a
+              class="ch-btn ch-btn-secondary is-compact"
+              routerLink="/matchups"
+              [queryParams]="{ week: rec.week }"
+            >
+              Box Scores →
+            </a>
+          </div>
+        </div>
+
+        @if (rec.awards.length > 0) {
+          <div class="ch-stat-strip-4 hero-awards-rail">
+            @for (aw of rec.awards; track aw.id) {
+              @if (aw.rosterId) {
+                <a class="ch-feature-tile award-tile" [routerLink]="['/teams', aw.rosterId]">
+                  <span class="ch-team-hero-stat">{{ aw.kicker }}</span>
+                  <strong class="ch-team-hero-val tile-name">{{ aw.headline }}</strong>
+                  <span class="ch-team-hero-sub mono is-signal">{{ aw.stat }}</span>
+                  <p class="award-detail">{{ aw.detail }}</p>
+                </a>
+              }
+            }
+          </div>
+        } @else {
+          <div class="ch-feature-tile">
+            No completed scores yet for Week {{ rec.week }}. Check back after kickoff or select a past week above.
+          </div>
+        }
+      </section>
+
+      <div class="ch-bento">
+        <section class="ch-card ch-stack span-7">
+          <div class="ch-row-between">
+            <div>
+              <span class="ch-overline">Week {{ rec.week }} Results</span>
+              <h2 class="ch-section-title">Matchup Digest</h2>
+            </div>
+            <span class="muted-note mono">{{ rec.games.length }} matchups</span>
+          </div>
+
+          <div class="ch-stack digest-list">
+            @for (g of rec.games; track g.matchupId) {
+              <a
+                class="ch-well digest-row"
+                [routerLink]="['/matchups']"
+                [queryParams]="{ week: rec.week, matchup: g.matchupId }"
+              >
+                <div class="digest-side">
+                  <strong [class.is-win]="g.home.isWinner">{{ g.home.teamName }}</strong>
+                  <span class="mono score-num" [class.is-win]="g.home.isWinner">{{ g.home.points.toFixed(2) }}</span>
+                </div>
+                <span class="vs-sep mono">
+                  @if (g.away) {
+                    Δ {{ g.margin.toFixed(1) }}
+                  } @else {
+                    BYE
+                  }
+                </span>
+                @if (g.away; as away) {
+                  <div class="digest-side is-away">
+                    <span class="mono score-num" [class.is-win]="away.isWinner">{{ away.points.toFixed(2) }}</span>
+                    <strong [class.is-win]="away.isWinner">{{ away.teamName }}</strong>
+                  </div>
+                }
+              </a>
+            }
+          </div>
+        </section>
+
+        <section class="ch-card ch-stack span-5">
+          <div>
+            <span class="ch-overline">Week {{ rec.week }} Superlatives</span>
+            <h2 class="ch-section-title">Upsets, Extremes &amp; Wire</h2>
+          </div>
+
+          <div class="ch-stack super-list">
+            @if (rec.biggestBlowout; as blow) {
+              <div class="ch-well super-card">
+                <span class="ch-overline">Biggest Blowout</span>
+                <strong>{{ blow.winner }} crushed {{ blow.loser }}</strong>
+                <span class="mono super-meta">{{ blow.scoreLine }} (+{{ blow.margin.toFixed(1) }} pts)</span>
+              </div>
+            }
+            @if (rec.luckySneak; as sneak) {
+              <a class="ch-well super-card" [routerLink]="['/teams', sneak.rosterId]">
+                <span class="ch-overline">Lucky Escape (Low Score Win)</span>
+                <strong>{{ sneak.teamName }}</strong>
+                <span class="mono super-meta">{{ sneak.points.toFixed(1) }} pts · def. {{ sneak.beat }}</span>
+              </a>
+            }
+            @if (rec.lowScore; as low) {
+              <a class="ch-well super-card" [routerLink]="['/teams', low.rosterId]">
+                <span class="ch-overline">Coldest Scoring Night</span>
+                <strong>{{ low.teamName }}</strong>
+                <span class="mono super-meta">{{ low.points.toFixed(1) }} pts</span>
+              </a>
+            }
+            @if (rec.trades.length > 0) {
+              <div class="ch-well super-card">
+                <span class="ch-overline">Trades Completed Week {{ rec.week }}</span>
+                <strong>{{ rec.trades.length }} league deal{{ rec.trades.length === 1 ? '' : 's' }}</strong>
+                <a class="inline-link" routerLink="/trades">Inspect ledger →</a>
+              </div>
+            }
+          </div>
+        </section>
+
+        @if (rec.boomPlayers.length > 0) {
+          <section class="ch-card ch-stack span-12">
+            <div class="ch-row-between">
+              <div>
+                <span class="ch-overline">Individual Performances</span>
+                <h2 class="ch-section-title">Week {{ rec.week }} Top Scorers</h2>
+              </div>
+              <span class="muted-note ch-desktop-only">Includes starters &amp; bench explosions</span>
+            </div>
+
+            <div class="boom-grid">
+              @for (bp of rec.boomPlayers; track bp.playerId) {
+                <a
+                  class="ch-well boom-card"
+                  [routerLink]="['/players']"
+                  [queryParams]="{ player: bp.playerId }"
+                >
+                  <div class="ch-row-between">
+                    <span class="ch-pos-pill mono" [attr.data-pos]="bp.position">{{ bp.position }}</span>
+                    <span
+                      class="ch-chip"
+                      [class.is-jade]="bp.wasStarted"
+                      [class.is-warning]="!bp.wasStarted"
+                    >
+                      {{ bp.wasStarted ? 'Started' : 'Bench' }}
+                    </span>
+                  </div>
+                  <strong class="boom-name">{{ bp.name }}</strong>
+                  <div class="ch-row-between boom-foot mono">
+                    <span class="boom-team">{{ bp.fantasyTeamName }}</span>
+                    <strong>{{ bp.points.toFixed(1) }}p</strong>
+                  </div>
+                </a>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    } @else {
+      <section class="ch-card ch-empty-state">
+        <h2 class="ch-section-title">No Weekly Recaps Available Yet</h2>
+        <p>Weekly recaps unlock as soon as Week 1 matchups are populated in Sleeper.</p>
+      </section>
+    }
+  </div>
+}

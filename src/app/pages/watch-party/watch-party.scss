@@ -1,0 +1,498 @@
+@use 'mixins' as *;
+
+.wp-page,
+.wp-scorebug,
+.bug-id,
+.bug-score-col,
+.plays-stage,
+.live-players-section,
+.feed-card,
+.ev-main,
+.ev-right,
+.starters-list,
+.st-info,
+.deck-card,
+.bug-center,
+.drive-chip,
+.ch-wp-alerts,
+.ch-wp-alert-body,
+.pre-season-card,
+.broadcast-sheet-body {
+  @include stack(var(--space-2));
+}
+
+.wp-page {
+  gap: 14px;
+}
+
+.wp-controls,
+.wp-desktop-controls,
+.deck-top,
+.deck-line,
+.bug-team,
+.stage-bar,
+.feed-head,
+.feed-title-grp,
+.ev-top,
+.st-name-line,
+.drv-top {
+  @include row(var(--space-2), center, space-between);
+}
+
+.bug-team,
+.ev-top,
+.st-name-line,
+.feed-title-grp {
+  justify-content: flex-start;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.stage-bar,
+.wp-controls,
+.wp-desktop-controls {
+  flex-wrap: wrap;
+}
+
+.sheet-nav-links {
+  @include row(8px, center, space-between, wrap);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.auto-pill {
+  gap: 6px;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--signal);
+}
+
+/* Alert Banner Stack */
+.ch-wp-alert-card {
+  @include row(var(--space-3), center, space-between);
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--jade);
+  background: var(--graphite);
+  color: var(--on-graphite);
+  box-shadow: var(--shadow-card-hover);
+
+  &[data-kind='TO'] {
+    border-color: var(--negative);
+  }
+
+  &[data-kind='RZ'] {
+    border-color: var(--danger-pill);
+  }
+}
+
+.ch-wp-alert-badge {
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: var(--signal);
+  color: var(--graphite);
+  flex-shrink: 0;
+
+  &[data-kind='TO'],
+  &[data-kind='RZ'] {
+    background: var(--danger-pill);
+    color: var(--on-accent);
+  }
+}
+
+.ch-wp-alert-body {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.ch-wp-alert-title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.ch-wp-alert-detail {
+  font-size: 12px;
+  color: var(--on-graphite-muted);
+}
+
+.ch-wp-alert-pts {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--signal);
+  flex-shrink: 0;
+}
+
+.ch-wp-alert-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--on-graphite-border);
+  background: transparent;
+  color: var(--on-graphite-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--on-graphite);
+    background: var(--graphite-raised);
+  }
+}
+
+.alerts-clear-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Mobile-First Snap Rail for Matchup Deck & Drives -> Auto-Fit Grid on md+ */
+.matchup-deck,
+.drives-strip {
+  @include scroll-rail(10px);
+  scroll-snap-type: x mandatory;
+  padding-bottom: var(--space-1);
+
+  @include mq(md) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+    overflow: visible;
+    padding-bottom: 0;
+  }
+}
+
+.deck-card,
+.drive-chip {
+  flex: 0 0 min(74%, 236px);
+  scroll-snap-align: start;
+}
+
+.deck-card {
+  padding: 10px var(--space-3);
+  gap: 5px;
+  text-align: left;
+
+  &.is-selected {
+    border-color: var(--jade);
+    background: var(--surface-soft);
+    outline: 1px solid var(--jade);
+  }
+}
+
+.deck-top,
+.deck-bye,
+.ev-meta,
+.empty-feed,
+.feed-sub,
+.deck-pct {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.deck-line {
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+
+  &.is-win {
+    color: var(--ink);
+    font-weight: 700;
+  }
+}
+
+.deck-nums {
+  @include row(6px, center);
+}
+
+.deck-name,
+.bug-name,
+.spot-txt {
+  @include truncate;
+}
+
+/* Live Scorebug (Mobile-first stacked -> 3-col via @container) */
+.wp-scorebug {
+  padding: 14px;
+  gap: 10px;
+
+  @include mq(md) {
+    padding: 14px 18px;
+  }
+}
+
+.bug-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+
+  @include cq(740px) {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+.bug-team {
+  @include cq(740px) {
+    &.is-away {
+      flex-direction: row-reverse;
+
+      .bug-id {
+        align-items: flex-end;
+        text-align: right;
+      }
+    }
+  }
+}
+
+.bug-id,
+.ev-main,
+.st-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bug-score-col {
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+
+  @include cq(740px) {
+    &.is-away {
+      align-items: flex-start;
+    }
+  }
+}
+
+.bug-name,
+.feed-team {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.bug-name,
+.spot-txt {
+  color: var(--on-graphite);
+}
+
+.bug-sub,
+.bug-diff,
+.bug-proj {
+  font-size: 11px;
+  color: var(--on-graphite-muted);
+}
+
+.scorebug-link {
+  font-size: 10.5px;
+  color: var(--on-graphite-muted);
+  text-decoration: underline;
+}
+
+.bug-pts {
+  font-size: clamp(22px, 3vw, 26px);
+  font-weight: 700;
+  color: var(--on-graphite);
+
+  &.is-signal {
+    color: var(--signal);
+  }
+}
+
+.bug-center {
+  @include row(8px, center, flex-start);
+
+  @include cq(740px) {
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+  }
+}
+
+.bug-spotlight {
+  @include row(10px, center);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--on-graphite-border);
+}
+
+.spot-txt {
+  flex: 1;
+  font-size: 12.5px;
+}
+
+.spot-delta {
+  font-size: 13.5px;
+  font-weight: 700;
+
+  &.is-pos {
+    color: var(--signal);
+  }
+
+  &.is-neg {
+    color: var(--on-graphite-danger);
+  }
+}
+
+.drive-chip {
+  padding: 10px var(--space-3);
+  gap: var(--space-1);
+
+  &.is-rz {
+    border-color: var(--negative);
+    background: var(--negative-soft);
+  }
+}
+
+.drv-game,
+.drv-sit {
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
+.drv-players {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.drv-live {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--jade);
+}
+
+/* Mobile Feed Focus Switch Helper */
+.mobile-hidden {
+  @include mq-only-mobile {
+    display: none;
+  }
+}
+
+.plays-stage,
+.live-players-section,
+.feed-card {
+  gap: var(--space-3);
+}
+
+.wp-feed {
+  min-height: 220px;
+  max-height: 360px;
+
+  @include mq(md) {
+    min-height: 320px;
+    max-height: 580px;
+  }
+}
+
+.ev-main {
+  gap: var(--space-1);
+}
+
+.ev-player,
+.ev-short {
+  font-size: 13px;
+}
+
+.ev-short {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.ch-imp-badge {
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  background: var(--neutral-soft);
+  color: var(--ink);
+
+  &[data-imp='touchdown'] {
+    background: var(--graphite);
+    color: var(--signal);
+  }
+
+  &[data-imp='turnover'] {
+    background: var(--negative);
+    color: var(--on-accent);
+  }
+
+  &[data-imp='big'] {
+    background: var(--warning-soft);
+    color: var(--warning);
+  }
+}
+
+.yd-pill {
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-secondary);
+}
+
+.ev-right {
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.play-team-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.ev-pts {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--positive);
+
+  &[data-imp='turnover'] {
+    color: var(--negative);
+  }
+}
+
+.starter-row {
+  @include row(10px, center);
+  min-height: 48px;
+  padding: var(--space-2) 10px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--jade);
+  background: var(--jade-soft);
+  text-align: left;
+  cursor: pointer;
+
+  &.is-focused {
+    outline: 2px solid var(--jade);
+    background: var(--surface);
+  }
+}
+
+.st-pts {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.pre-season-card {
+  gap: 10px;
+}
+
+.pre-season-copy {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.pre-season-actions {
+  padding-top: var(--space-1);
+}

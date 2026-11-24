@@ -1,0 +1,792 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack insights-page">
+    <div class="ch-stack">
+      <span class="ch-skeleton" style="width: 240px; height: 32px;"></span>
+      <span class="ch-skeleton" style="width: 300px; height: 20px;"></span>
+    </div>
+    <span class="ch-skeleton-dark" style="height: 170px;"></span>
+    <span class="ch-skeleton" style="height: 300px;"></span>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack insights-page ch-enter">
+    <app-page-header
+      [overline]="'Alternate Realities · ' + data.league.season"
+      title="What-Ifs & League Lab"
+      [context]="
+        'Schedule swaps, league-median playoff rules, optimal lineup hindsight, and weekly luck for ' +
+        data.league.name +
+        '.'
+      "
+      mobileContext="Schedule swaps, median & best-ball sims"
+      [meta]="'Updated ' + data.loadedAtTime"
+    >
+      <div class="ch-flex-row header-actions">
+        @if (labPulse(); as pulse) {
+          <span class="ch-chip is-neutral mono">
+            {{ pulse.flippedTeams }} Median Flip{{ pulse.flippedTeams === 1 ? '' : 's' }}
+          </span>
+        }
+        <a class="ch-btn ch-btn-secondary is-compact" routerLink="/recaps">Recaps →</a>
+      </div>
+    </app-page-header>
+
+    <div class="ch-bento">
+      <section class="ch-feature ch-stack span-12 karma-hero">
+        <div class="ch-row-between karma-head">
+          <div>
+            <span class="ch-overline on-dark">Karma &amp; Schedule Verdict</span>
+            <h2 class="karma-title">Who Got Blessed &amp; Who Got Robbed</h2>
+          </div>
+          @if (labPulse(); as pulse) {
+            <span class="ch-chip is-dark-muted mono">
+              {{ pulse.totalBenchLeft.toFixed(0) }} pts left on benches
+            </span>
+          }
+        </div>
+
+        @if (headlineAwards().length === 0) {
+          <div class="ch-feature-tile">Need at least one completed week to compute luck metrics.</div>
+        } @else {
+          <div class="ch-stat-strip-4 karma-rail">
+            @for (award of headlineAwards(); track award.id) {
+              <a class="ch-feature-tile karma-tile" [routerLink]="['/teams', award.rosterId]">
+                <div class="ch-row-between">
+                  <span class="award-badge mono" [class.is-signal]="award.id === 'blessed'">
+                    {{ award.badge }}
+                  </span>
+                  <span class="award-title">{{ award.title }}</span>
+                </div>
+                <strong class="ch-team-hero-val mono" [class.is-signal]="award.id === 'blessed'">
+                  {{ award.stat }}
+                </strong>
+                <div class="award-team">{{ award.teamName }}</div>
+                <p class="award-desc">{{ award.explanation }}</p>
+              </a>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="ch-card ch-stack span-12 lab-panel">
+        <div class="swap-head">
+          <div>
+            <span class="ch-overline">Interactive Simulation Lab</span>
+            <h2 class="ch-section-title">Alternate Format &amp; Schedule Explorer</h2>
+          </div>
+
+          <div class="lab-controls">
+            @if ((labMode() === 'simulator' || labMode() === 'allplay') && activeSwapRow(); as active) {
+              <div class="team-picker-wrap">
+                <app-picker
+                  class="team-picker"
+                  [options]="teamOptions()"
+                  [value]="active.teamRosterId"
+                  ariaLabel="Select team to simulate schedule"
+                  sheetTitle="Simulate Franchise"
+                  [searchable]="true"
+                  (valueChange)="focusTeam($event)"
+                />
+                <a class="ch-btn ch-btn-ghost is-compact" [routerLink]="['/teams', active.teamRosterId]">
+                  Team →
+                </a>
+              </div>
+            }
+
+            <div class="ch-segmented lab-tabs" role="tablist" aria-label="Simulation mode">
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="labMode() === 'simulator'"
+                (click)="setLabMode('simulator')"
+              >
+                Schedule Swaps
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="labMode() === 'allplay'"
+                (click)="setLabMode('allplay')"
+              >
+                Weekly All-Play
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="labMode() === 'matrix'"
+                (click)="setLabMode('matrix')"
+              >
+                Full Matrix
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="labMode() === 'median'"
+                (click)="setLabMode('median')"
+              >
+                Median Format
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="labMode() === 'bestball'"
+                (click)="setLabMode('bestball')"
+              >
+                Best-Ball Max PF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        @if (matrix().length === 0 && labMode() !== 'bestball') {
+          <div class="ch-well empty-swap">
+            Schedule simulations require scored weekly matchups.
+          </div>
+        } @else if (labMode() === 'simulator') {
+          @if (activeSwapRow(); as active) {
+            <div class="focus-summary">
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Actual Record</span>
+                <span class="box-val mono">{{ active.actualWins }}-{{ active.actualLosses }}</span>
+                <span class="box-sub">{{ active.teamName }}’s real schedule</span>
+              </div>
+
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Best-Case Scenario</span>
+                <span class="box-val mono is-pos">
+                  {{ active.bestScenario.wins }}-{{ active.bestScenario.losses }}
+                </span>
+                <span class="box-sub">
+                  With {{ active.bestScenario.scheduleOwnerName }}’s schedule ({{
+                    active.bestScenario.winDelta >= 0 ? '+' : ''
+                  }}{{ active.bestScenario.winDelta }} wins)
+                </span>
+              </div>
+
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Worst-Case Scenario</span>
+                <span class="box-val mono is-neg">
+                  {{ active.worstScenario.wins }}-{{ active.worstScenario.losses }}
+                </span>
+                <span class="box-sub">
+                  With {{ active.worstScenario.scheduleOwnerName }}’s schedule ({{
+                    active.worstScenario.winDelta >= 0 ? '+' : ''
+                  }}{{ active.worstScenario.winDelta }} wins)
+                </span>
+              </div>
+            </div>
+
+            <div class="swap-grid">
+              @for (cell of active.cells; track cell.scheduleOwnerId) {
+                <button
+                  type="button"
+                  class="swap-cell"
+                  [class.is-actual]="cell.isActual"
+                  [class.is-better]="!cell.isActual && cell.winDelta > 0"
+                  [class.is-worse]="!cell.isActual && cell.winDelta < 0"
+                  (click)="focusTeam(cell.scheduleOwnerId)"
+                  [title]="'Switch simulator focus to ' + cell.scheduleOwnerName"
+                >
+                  <div class="cell-owner">{{ cell.scheduleOwnerName }}’s schedule</div>
+                  <div class="cell-record mono">
+                    {{ cell.wins }}-{{ cell.losses }}@if (cell.ties > 0) {-{{ cell.ties }}}
+                  </div>
+                  <div class="cell-delta mono">
+                    @if (cell.isActual) {
+                      Actual Schedule
+                    } @else if (cell.winDelta > 0) {
+                      +{{ cell.winDelta }} wins vs actual
+                    } @else if (cell.winDelta < 0) {
+                      {{ cell.winDelta }} wins vs actual
+                    } @else {
+                      Same record
+                    }
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        } @else if (labMode() === 'allplay') {
+          @if (weeklyAllPlay(); as rep) {
+            <p class="lab-note">
+              Every week scored as a battle royale vs all {{ rep.avgFieldSize }} franchises — how
+              <strong>{{ rep.teamName }}</strong> placed each week and how many wins they deserved
+              based on weekly strength.
+            </p>
+
+            <div class="ch-stat-strip-4 allplay-kpis">
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Expected Wins (xW)</span>
+                <div class="ch-row-between">
+                  <span class="box-val mono">{{ rep.expectedWins.toFixed(1) }}</span>
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="rep.luckDeltaWins > 0"
+                    [class.is-negative]="rep.luckDeltaWins < 0"
+                    [class.is-neutral]="rep.luckDeltaWins === 0"
+                  >
+                    {{ rep.luckDeltaWins >= 0 ? '+' : '' }}{{ rep.luckDeltaWins.toFixed(1) }} vs {{ rep.actualWins }}W
+                  </span>
+                </div>
+                <span class="box-sub">
+                  Actual {{ rep.actualWins }}-{{ rep.actualLosses }} vs {{ rep.expectedWins.toFixed(1) }} deserved
+                </span>
+              </div>
+
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Cumulative All-Play</span>
+                <span class="box-val mono">
+                  {{ rep.totalAllPlayWins }}-{{ rep.totalAllPlayLosses }}@if (rep.totalAllPlayTies > 0) {-{{ rep.totalAllPlayTies }}}
+                </span>
+                <span class="box-sub mono">
+                  {{ rep.allPlayPct.toFixed(1) }}% win rate vs everyone
+                </span>
+              </div>
+
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Avg Weekly Finish</span>
+                <span class="box-val mono">#{{ rep.avgRank.toFixed(1) }} / {{ rep.avgFieldSize }}</span>
+                <span class="box-sub mono">
+                  {{ rep.topHalfWeeks }}/{{ rep.weeks.length }} top-half · {{ rep.podiumWeeks }} top-3
+                </span>
+              </div>
+
+              <div class="ch-well ch-stack summary-box">
+                <span class="ch-overline">Weekly Crowns &amp; Theft</span>
+                <span class="box-val mono">{{ rep.crownWeeks }} Crown{{ rep.crownWeeks === 1 ? '' : 's' }}</span>
+                <span class="box-sub mono">
+                  {{ rep.robbedWeeks }} robbed · {{ rep.heistWeeks }} stolen W
+                </span>
+              </div>
+            </div>
+
+            <div class="ch-stack royale-list">
+              <div class="royale-head-row mono">
+                <span>Week</span>
+                <span>Score (vs Avg)</span>
+                <span>League Finish &amp; Field Share</span>
+                <span>All-Play</span>
+                <span>Actual Matchup</span>
+                <span class="right-hdr">Verdict</span>
+              </div>
+
+              @for (wk of rep.weeks; track wk.week) {
+                <div class="royale-row" [attr.data-verdict]="wk.verdict">
+                  <span class="royale-wk mono">Wk {{ wk.week }}</span>
+
+                  <div class="royale-score mono">
+                    <strong>{{ wk.points.toFixed(1) }}</strong>
+                    <span
+                      class="royale-diff"
+                      [class.is-pos]="wk.deltaFromAvg >= 0"
+                      [class.is-neg]="wk.deltaFromAvg < 0"
+                    >
+                      {{ wk.deltaFromAvg >= 0 ? '+' : '' }}{{ wk.deltaFromAvg.toFixed(1) }} avg
+                    </span>
+                  </div>
+
+                  <div class="royale-meter-col">
+                    <div class="ch-row-between royale-rank-line mono">
+                      <strong>#{{ wk.placementRank }} of {{ wk.fieldSize }}</strong>
+                      <span>{{ wk.allPlayPct.toFixed(0) }}%</span>
+                    </div>
+                    <div class="ch-meter">
+                      <div
+                        class="royale-meter-fill"
+                        [class.is-top-half]="wk.expectedWinShare >= 0.5"
+                        [style.width.%]="wk.allPlayPct"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <span class="royale-ap mono">
+                    {{ wk.allPlayWins }}-{{ wk.allPlayLosses }}@if (wk.allPlayTies > 0) {-{{ wk.allPlayTies }}}
+                  </span>
+
+                  <div class="royale-h2h">
+                    @if (wk.opponentRosterId; as oppId) {
+                      <a class="team-link" [routerLink]="['/teams', oppId]">
+                        {{ wk.actualResult }} vs {{ wk.opponentName }}
+                      </a>
+                      <span class="royale-h2h-sub mono">
+                        {{ wk.points.toFixed(1) }}–{{ wk.opponentPoints?.toFixed(1) ?? '0.0' }} · Top {{ wk.topScoreThatWeek.toFixed(1) }}
+                      </span>
+                    } @else {
+                      <span class="royale-h2h-sub">Bye Week</span>
+                    }
+                  </div>
+
+                  <span
+                    class="ch-chip royale-verdict mono"
+                    [class.is-signal]="wk.verdict === 'crown'"
+                    [class.is-negative]="wk.verdict === 'robbed'"
+                    [class.is-warning]="wk.verdict === 'heist'"
+                    [class.is-positive]="wk.verdict === 'solid'"
+                    [class.is-neutral]="wk.verdict === 'tough' || wk.verdict === 'bye'"
+                  >
+                    {{ wk.verdictLabel }}
+                  </span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="ch-well empty-swap">No scored weeks available for weekly all-play simulation.</div>
+          }
+        } @else if (labMode() === 'matrix') {
+          <p class="lab-note">
+            Each team’s real weekly scores tested against every opponent’s weekly schedule. Tap a team
+            to inspect full schedule breakdowns.
+          </p>
+
+          <div class="ch-mobile-feed">
+            @for (row of matrix(); track row.teamRosterId) {
+              <button
+                type="button"
+                class="ch-data-card is-interactive mobile-matrix-card"
+                (click)="focusTeam(row.teamRosterId); setLabMode('simulator')"
+              >
+                <div class="ch-row-between">
+                  <strong class="card-team-name">{{ row.teamName }}</strong>
+                  <span class="ch-chip is-neutral mono">Actual {{ row.actualWins }}-{{ row.actualLosses }}</span>
+                </div>
+                <div class="ch-data-card-metrics">
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Best Schedule</span>
+                    <strong class="ch-data-metric-val mono is-pos">
+                      {{ row.bestScenario.wins }}-{{ row.bestScenario.losses }}
+                    </strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Worst Schedule</span>
+                    <strong class="ch-data-metric-val mono is-neg">
+                      {{ row.worstScenario.wins }}-{{ row.worstScenario.losses }}
+                    </strong>
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table matrix-table">
+              <thead>
+                <tr>
+                  <th class="ch-sticky-col">Scores \ Schedule</th>
+                  @for (col of matrix(); track col.teamRosterId) {
+                    <th class="center-col">{{ col.teamName }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of matrix(); track row.teamRosterId) {
+                  <tr
+                    class="is-clickable"
+                    (click)="focusTeam(row.teamRosterId); setLabMode('simulator')"
+                  >
+                    <td class="row-team ch-sticky-col">{{ row.teamName }}</td>
+                    @for (cell of row.cells; track cell.scheduleOwnerId) {
+                      <td
+                        class="center-col mono matrix-cell"
+                        [class.is-diag]="cell.isActual"
+                        [class.is-better]="!cell.isActual && cell.winDelta > 0"
+                        [class.is-worse]="!cell.isActual && cell.winDelta < 0"
+                      >
+                        {{ cell.wins }}-{{ cell.losses }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (labMode() === 'median') {
+          <p class="lab-note">
+            Simulates Sleeper’s 2-game-per-week rule: every week top-half scores earn an extra win vs the
+            league median (top {{ playoffTeams() }} seeds qualify).
+          </p>
+
+          <div class="ch-mobile-feed">
+            @for (row of medianStandings(); track row.rosterId) {
+              <article
+                class="ch-data-card"
+                [class.is-highlighted]="row.playoffFlip === 'in'"
+              >
+                <div class="ch-row-between">
+                  <div class="ch-flex-row">
+                    <span class="rank-num mono">#{{ row.medianRank }}</span>
+                    <a class="team-link" [routerLink]="['/teams', row.rosterId]">{{ row.teamName }}</a>
+                  </div>
+                  @if (row.playoffFlip === 'in') {
+                    <span class="ch-chip is-positive">In Cut</span>
+                  } @else if (row.playoffFlip === 'out') {
+                    <span class="ch-chip is-negative">Drops Out</span>
+                  }
+                </div>
+                <div class="ch-data-card-metrics">
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Combined</span>
+                    <strong class="ch-data-metric-val mono">{{ row.combinedWins }}-{{ row.combinedLosses }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">vs Median</span>
+                    <strong class="ch-data-metric-val mono">{{ row.medianWins }}-{{ row.medianLosses }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">H2H Actual</span>
+                    <strong class="ch-data-metric-val mono">{{ row.actualWins }}-{{ row.actualLosses }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Shift</span>
+                    <strong
+                      class="ch-data-metric-val mono"
+                      [class.is-pos]="row.seedDelta > 0"
+                      [class.is-neg]="row.seedDelta < 0"
+                    >
+                      {{ row.seedDelta === 0 ? '—' : (row.seedDelta > 0 ? '↑ +' : '↓ ') + row.seedDelta }}
+                    </strong>
+                  </div>
+                </div>
+              </article>
+              @if (row.medianRank === playoffTeams()) {
+                <div class="playoff-cutline mono">Playoff Cut Line (Top {{ playoffTeams() }})</div>
+              }
+            }
+          </div>
+
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table">
+              <thead>
+                <tr>
+                  <th>Seed</th>
+                  <th>Franchise</th>
+                  <th>H2H Actual</th>
+                  <th>vs Median</th>
+                  <th>Combined</th>
+                  <th class="num">Seed Shift</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of medianStandings(); track row.rosterId) {
+                  <tr [class.playoff-cut]="row.medianRank === playoffTeams()">
+                    <td class="mono">
+                      #{{ row.medianRank }}
+                      @if (row.playoffFlip === 'in') {
+                        <span class="ch-chip is-positive">In Cut</span>
+                      } @else if (row.playoffFlip === 'out') {
+                        <span class="ch-chip is-negative">Drops Out</span>
+                      }
+                    </td>
+                    <td>
+                      <a class="team-link" [routerLink]="['/teams', row.rosterId]">
+                        {{ row.teamName }}
+                      </a>
+                    </td>
+                    <td class="mono muted-col">{{ row.actualWins }}-{{ row.actualLosses }}</td>
+                    <td class="mono">{{ row.medianWins }}-{{ row.medianLosses }}</td>
+                    <td class="mono strong-cell">{{ row.combinedWins }}-{{ row.combinedLosses }}</td>
+                    <td
+                      class="num mono"
+                      [class.is-pos]="row.seedDelta > 0"
+                      [class.is-neg]="row.seedDelta < 0"
+                    >
+                      @if (row.seedDelta === 0) {
+                        —
+                      } @else if (row.seedDelta > 0) {
+                        ↑ +{{ row.seedDelta }}
+                      } @else {
+                        ↓ {{ row.seedDelta }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="lab-note">
+            Optimal Best-Ball simulation: ranks franchises if every manager started their highest-scoring
+            possible lineup every week (zero bench points left behind).
+          </p>
+
+          <div class="ch-mobile-feed">
+            @for (row of optimalRankings(); track row.rosterId) {
+              <article class="ch-data-card">
+                <div class="ch-row-between">
+                  <div class="ch-flex-row">
+                    <span class="rank-num mono">#{{ row.optimalRank }}</span>
+                    <a class="team-link" [routerLink]="['/teams', row.rosterId]">{{ row.teamName }}</a>
+                  </div>
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="row.rankDelta > 0"
+                    [class.is-negative]="row.rankDelta < 0"
+                    [class.is-neutral]="row.rankDelta === 0"
+                  >
+                    {{ row.rankDelta === 0 ? 'Even' : (row.rankDelta > 0 ? '↑ +' : '↓ ') + row.rankDelta }}
+                  </span>
+                </div>
+                <div class="ch-data-card-metrics">
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Max PF</span>
+                    <strong class="ch-data-metric-val mono">{{ row.maxPointsFor.toFixed(1) }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Actual PF</span>
+                    <strong class="ch-data-metric-val mono">{{ row.pointsFor.toFixed(1) }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Bench Left</span>
+                    <strong class="ch-data-metric-val mono is-neg">+{{ row.pointsLeftOnBench.toFixed(1) }}</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Efficiency</span>
+                    <strong class="ch-data-metric-val mono">{{ row.efficiencyPct.toFixed(1) }}%</strong>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table">
+              <thead>
+                <tr>
+                  <th>Opt #</th>
+                  <th>Franchise</th>
+                  <th class="num">Actual PF</th>
+                  <th class="num">Max PF</th>
+                  <th class="num">Left on Bench</th>
+                  <th>Efficiency</th>
+                  <th class="num">PF Shift</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of optimalRankings(); track row.rosterId) {
+                  <tr>
+                    <td class="mono">#{{ row.optimalRank }}</td>
+                    <td>
+                      <a class="team-link" [routerLink]="['/teams', row.rosterId]">
+                        {{ row.teamName }}
+                      </a>
+                    </td>
+                    <td class="num mono">{{ row.pointsFor.toFixed(1) }}</td>
+                    <td class="num mono strong-cell">{{ row.maxPointsFor.toFixed(1) }}</td>
+                    <td class="num mono is-neg">+{{ row.pointsLeftOnBench.toFixed(1) }}</td>
+                    <td class="eff-cell">
+                      <div class="ch-row-between eff-meta mono">
+                        <span>{{ row.efficiencyPct.toFixed(1) }}%</span>
+                      </div>
+                      <div class="ch-meter">
+                        <div class="ch-meter-fill" [style.width.%]="row.efficiencyPct"></div>
+                      </div>
+                    </td>
+                    <td
+                      class="num mono"
+                      [class.is-pos]="row.rankDelta > 0"
+                      [class.is-neg]="row.rankDelta < 0"
+                    >
+                      @if (row.rankDelta === 0) {
+                        —
+                      } @else if (row.rankDelta > 0) {
+                        ↑ +{{ row.rankDelta }}
+                      } @else {
+                        ↓ {{ row.rankDelta }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      @if (secondaryAwards().length > 0) {
+        <div class="span-12 awards-ribbon">
+          @for (award of secondaryAwards(); track award.id) {
+            <a class="ch-card ch-interactive ch-stack oddity-card" [routerLink]="['/teams', award.rosterId]">
+              <div class="ch-row-between">
+                <span class="ch-overline">{{ award.badge }}</span>
+                <span class="ch-chip is-neutral">{{ award.title }}</span>
+              </div>
+              <strong class="oddity-stat mono">{{ award.stat }}</strong>
+              <div class="oddity-team">{{ award.teamName }}</div>
+              <p class="oddity-desc">{{ award.explanation }}</p>
+            </a>
+          }
+        </div>
+      }
+
+      <section class="ch-card ch-stack span-6 moments-panel">
+        <div class="ch-row-between moments-head">
+          <div>
+            <span class="ch-overline">Weekly Oddities</span>
+            <h2 class="ch-section-title">Robberies, Heists &amp; Extremes</h2>
+          </div>
+
+          <div class="ch-flex-row moment-filters">
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="momentFilter() === 'all'"
+              [class.is-neutral]="momentFilter() !== 'all'"
+              (click)="setMomentFilter('all')"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="momentFilter() === 'robbery'"
+              [class.is-neutral]="momentFilter() !== 'robbery'"
+              (click)="setMomentFilter('robbery')"
+            >
+              Robberies
+            </button>
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="momentFilter() === 'heist'"
+              [class.is-neutral]="momentFilter() !== 'heist'"
+              (click)="setMomentFilter('heist')"
+            >
+              Heists
+            </button>
+            <button
+              type="button"
+              class="ch-chip filter-chip"
+              [class.is-jade]="momentFilter() === 'shootout'"
+              [class.is-neutral]="momentFilter() !== 'shootout'"
+              (click)="setMomentFilter('shootout')"
+            >
+              Extremes
+            </button>
+          </div>
+        </div>
+
+        @if (filteredMoments().length === 0) {
+          <div class="ch-well empty-swap">No finalized weekly oddities match this filter.</div>
+        } @else {
+          <div class="ch-stack moments-list">
+            @for (m of filteredMoments(); track m.id) {
+              <a class="ch-well ch-stack moment-row" [routerLink]="['/teams', m.rosterId]">
+                <div class="ch-row-between">
+                  <span
+                    class="ch-chip"
+                    [class.is-negative]="m.kind === 'robbery'"
+                    [class.is-positive]="m.kind === 'heist'"
+                    [class.is-jade]="m.kind === 'shootout'"
+                    [class.is-neutral]="m.kind === 'snoozer'"
+                  >
+                    {{ m.title }}
+                  </span>
+                  <span class="mono moment-wk">Wk {{ m.week }}</span>
+                </div>
+                <div class="moment-headline">{{ m.headline }}</div>
+                <div class="moment-detail">{{ m.detail }}</div>
+              </a>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="ch-card ch-stack span-6 allplay-panel">
+        <div class="allplay-head">
+          <div class="ch-row-between head-inner">
+            <div>
+              <span class="ch-overline">Schedule-Free Standings</span>
+              <h2 class="ch-section-title">True All-Play vs Actual Rank</h2>
+            </div>
+            <span class="allplay-hint ch-desktop-only">Click row to simulate team</span>
+          </div>
+        </div>
+
+        <div class="ch-mobile-feed mobile-allplay-feed">
+          @for (row of allPlayComparison(); track row.rosterId) {
+            <button
+              type="button"
+              class="ch-data-card is-interactive mobile-matrix-card"
+              [class.is-highlighted]="activeSwapRow()?.teamRosterId === row.rosterId"
+              (click)="focusTeam(row.rosterId); setLabMode('allplay')"
+            >
+              <div class="ch-row-between">
+                <div class="ch-flex-row">
+                  <span class="rank-num mono">#{{ row.allPlayRank }}</span>
+                  <strong class="card-team-name">{{ row.teamName }}</strong>
+                </div>
+                <span
+                  class="ch-chip mono"
+                  [class.is-positive]="row.rankDiff < 0"
+                  [class.is-negative]="row.rankDiff > 0"
+                  [class.is-neutral]="row.rankDiff === 0"
+                >
+                  {{ row.rankDiff === 0 ? 'Even' : (row.rankDiff > 0 ? '-' + row.rankDiff : '+' + -row.rankDiff) + ' spots' }}
+                </span>
+              </div>
+              <div class="ch-meter">
+                <div class="ch-meter-fill" [style.width.%]="row.allPlayPct"></div>
+              </div>
+              <div class="ch-row-between mono card-foot-line">
+                <span>All-Play: {{ row.allPlayRecord }} ({{ row.allPlayPct.toFixed(0) }}%)</span>
+                <span>Actual #{{ row.actualRank }} ({{ row.actualRecord }})</span>
+              </div>
+            </button>
+          }
+        </div>
+
+        <div class="ch-table-wrap ch-sticky-scroll ch-desktop-table">
+          <table class="ch-table allplay-table">
+            <thead>
+              <tr>
+                <th>AP #</th>
+                <th>Franchise</th>
+                <th>All-Play %</th>
+                <th class="num">Actual</th>
+                <th class="num">Luck Gap</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of allPlayComparison(); track row.rosterId) {
+                <tr
+                  class="is-clickable"
+                  [class.is-selected-row]="activeSwapRow()?.teamRosterId === row.rosterId"
+                  (click)="focusTeam(row.rosterId); setLabMode('allplay')"
+                >
+                  <td class="mono">#{{ row.allPlayRank }}</td>
+                  <td>
+                    <a
+                      class="team-link"
+                      [routerLink]="['/teams', row.rosterId]"
+                      (click)="$event.stopPropagation()"
+                    >
+                      {{ row.teamName }}
+                    </a>
+                  </td>
+                  <td class="ap-cell">
+                    <div class="mono ap-txt">{{ row.allPlayRecord }} ({{ row.allPlayPct.toFixed(0) }}%)</div>
+                    <div class="ch-meter">
+                      <div class="ch-meter-fill" [style.width.%]="row.allPlayPct"></div>
+                    </div>
+                  </td>
+                  <td class="num mono">#{{ row.actualRank }} ({{ row.actualRecord }})</td>
+                  <td
+                    class="num mono"
+                    [class.is-pos]="row.rankDiff < 0"
+                    [class.is-neg]="row.rankDiff > 0"
+                  >
+                    @if (row.rankDiff === 0) {
+                      Even
+                    } @else if (row.rankDiff > 0) {
+                      -{{ row.rankDiff }} spots
+                    } @else {
+                      +{{ -row.rankDiff }} spots
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+}

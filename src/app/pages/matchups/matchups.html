@@ -1,0 +1,323 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack matchups-page">
+    <header class="page-head">
+      <div>
+        <span class="ch-skeleton" style="width: 150px; height: 34px;"></span>
+        <span class="ch-skeleton" style="width: 220px; height: 16px; margin-top: 8px;"></span>
+      </div>
+      <span class="ch-skeleton" style="width: 240px; height: 40px;"></span>
+    </header>
+
+    <div class="ch-feature skeleton-featured">
+      <span class="ch-skeleton-dark" style="width: 140px; height: 14px;"></span>
+      <span class="ch-skeleton-dark" style="height: 82px;"></span>
+    </div>
+
+    <div class="ch-bento">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="ch-card span-3">
+          <span class="ch-skeleton" style="height: 92px;"></span>
+        </div>
+      }
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack matchups-page ch-enter">
+    <app-page-header
+      [overline]="'Head-to-Head Slate · Week ' + sleeper.selectedWeek()"
+      title="Matchups"
+      [context]="'Week ' + sleeper.selectedWeek() + ' slate · ' + data.league.name"
+      [mobileContext]="data.league.name + ' · Week ' + sleeper.selectedWeek()"
+      [meta]="'Updated ' + data.loadedAtTime"
+    >
+      @if (myWeekMatchupId(); as myMid) {
+        @if (activeMatchup()?.matchupId !== myMid) {
+          <button
+            type="button"
+            class="ch-btn ch-btn-secondary is-compact"
+            (click)="selectMatchup(myMid)"
+          >
+            My Matchup
+          </button>
+        }
+      }
+
+      @if (sleeper.availableWeeks().length > 0) {
+        <app-week-stepper
+          [week]="sleeper.selectedWeek()"
+          [weeks]="sleeper.availableWeeks()"
+          [compact]="true"
+          (weekChange)="selectWeek($event)"
+        />
+      }
+
+      <button
+        type="button"
+        class="ch-btn ch-btn-secondary is-compact ch-refresh-btn"
+        [disabled]="sleeper.refreshing() || sleeper.loading()"
+        (click)="refreshWeek()"
+        aria-label="Refresh live week scores"
+      >
+        <span
+          class="ch-refresh-glyph"
+          [class.is-spinning]="sleeper.refreshing() || sleeper.loading()"
+          aria-hidden="true"
+          >↻</span
+        >
+        <span>{{ sleeper.refreshing() || sleeper.loading() ? 'Sync...' : 'Refresh' }}</span>
+      </button>
+    </app-page-header>
+
+    @if (sleeper.currentWeekMatchups().length === 0) {
+      <section class="ch-card empty-week ch-stack">
+        <span class="ch-overline">
+          @if (sleeper.seasonPhase() === 'pre_draft' || sleeper.seasonPhase() === 'drafting') {
+            Pre-Season &amp; Draft Window
+          } @else {
+            No Matchups Scheduled
+          }
+        </span>
+        <strong class="empty-week-title">No matchups available for Week {{ sleeper.selectedWeek() }}.</strong>
+        <span class="empty-week-copy">
+          @if (sleeper.seasonPhase() === 'pre_draft' || sleeper.seasonPhase() === 'drafting') {
+            Weekly head-to-head matchups populate once the season draft wraps and Week 1 schedule locks.
+          } @else {
+            Try another week in the selector above or jump to Season Standings &amp; All-Time History.
+          }
+        </span>
+        <div class="ch-flex-row empty-week-actions">
+          <a class="ch-btn ch-btn-primary is-compact" routerLink="/draft">Draft Board</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/teams">Teams</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">League History</a>
+        </div>
+      </section>
+    } @else {
+      <div class="matchup-deck-grid" role="region" aria-label="Switch matchup">
+        @for (card of sleeper.currentWeekMatchups(); track card.matchupId) {
+          <button
+            type="button"
+            class="ch-card ch-card-interactive matchup-tile"
+            [class.is-selected]="activeMatchup()?.matchupId === card.matchupId"
+            (click)="selectMatchup(card.matchupId)"
+          >
+            <div class="tile-top">
+              <span class="ch-overline">Matchup {{ card.matchupId }}</span>
+              <span
+                class="ch-chip mono"
+                [class.is-jade]="card.status === 'Live'"
+                [class.is-neutral]="card.status !== 'Live'"
+              >
+                {{ card.status }}
+              </span>
+            </div>
+
+            <div class="tile-row" [class.is-winner]="card.home.isWinner">
+              <div class="tile-team">
+                <span class="ch-avatar sz-32">
+                  @if (card.home.avatarUrl) {
+                    <img [src]="card.home.avatarUrl" [alt]="card.home.teamName" />
+                  } @else {
+                    <span>{{ card.home.initials }}</span>
+                  }
+                </span>
+                <div class="tile-names">
+                  <span class="tile-team-name">{{ card.home.teamName }}</span>
+                  <span class="tile-record mono">{{ card.home.recordLabel }}</span>
+                </div>
+              </div>
+              <div class="tile-score-col">
+                <span class="tile-score mono">{{ card.home.points.toFixed(2) }}</span>
+                @if (getMatchupOdds(card.matchupId); as odds) {
+                  @if (odds.homeProj !== null) {
+                    <span class="tile-proj mono">
+                      P {{ odds.homeProj.toFixed(1) }}
+                      @if (odds.homeWinPct !== null) {
+                        · <span [class.is-fav]="odds.homeWinPct >= 50">{{ odds.homeWinPct }}%</span>
+                      }
+                    </span>
+                  }
+                }
+              </div>
+            </div>
+
+            @if (card.away; as away) {
+              <div class="tile-row" [class.is-winner]="away.isWinner">
+                <div class="tile-team">
+                  <span class="ch-avatar sz-32">
+                    @if (away.avatarUrl) {
+                      <img [src]="away.avatarUrl" [alt]="away.teamName" />
+                    } @else {
+                      <span>{{ away.initials }}</span>
+                    }
+                  </span>
+                  <div class="tile-names">
+                    <span class="tile-team-name">{{ away.teamName }}</span>
+                    <span class="tile-record mono">{{ away.recordLabel }}</span>
+                  </div>
+                </div>
+                <div class="tile-score-col">
+                  <span class="tile-score mono">{{ away.points.toFixed(2) }}</span>
+                  @if (getMatchupOdds(card.matchupId); as odds) {
+                    @if (odds.awayProj !== null) {
+                      <span class="tile-proj mono">
+                        P {{ odds.awayProj.toFixed(1) }}
+                        @if (odds.awayWinPct !== null) {
+                          · <span [class.is-fav]="odds.awayWinPct >= 50">{{ odds.awayWinPct }}%</span>
+                        }
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="tile-bye">Bye week</div>
+            }
+          </button>
+        }
+      </div>
+
+      @if (activeMatchup(); as featured) {
+        <section class="ch-feature featured-matchup ch-cq">
+          <div class="featured-head">
+            <span class="ch-overline dark-overline">
+              Week {{ featured.week }} · Matchup {{ featured.matchupId }}
+            </span>
+            <div class="ch-flex-row">
+              <a
+                class="ch-btn ch-btn-ghost is-compact watch-party-pill"
+                [routerLink]="['/watch-party']"
+                [queryParams]="{ matchup: featured.matchupId }"
+              >
+                Watch Party →
+              </a>
+              <span
+                class="ch-chip mono"
+                [class.is-signal]="featured.status === 'Live'"
+                [class.is-dark-muted]="featured.status !== 'Live'"
+              >
+                {{ featured.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="scoreboard-grid">
+            <a class="scoreboard-side" [routerLink]="['/teams', featured.home.rosterId]">
+              <div class="side-identity">
+                <span class="ch-avatar sz-48 on-dark hero-avatar">
+                  @if (featured.home.avatarUrl) {
+                    <img [src]="featured.home.avatarUrl" [alt]="featured.home.teamName" />
+                  } @else {
+                    <span>{{ featured.home.initials }}</span>
+                  }
+                </span>
+                <div class="side-text">
+                  <span class="side-name">{{ featured.home.teamName }}</span>
+                  <span class="side-sub mono">
+                    {{ featured.home.managerName }} · {{ featured.home.recordLabel }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="score-block">
+                <span
+                  class="ch-display-metric featured-score"
+                  [class.is-signal-score]="featured.home.isWinner"
+                >
+                  {{ featured.home.points.toFixed(2) }}
+                </span>
+                @if (featuredOdds()?.homeProj; as hProj) {
+                  <span class="proj-line mono">
+                    Proj {{ hProj.toFixed(2) }}
+                    @if (featuredOdds()?.homeWinPct !== null) {
+                      · {{ featuredOdds()!.homeWinPct }}% win
+                    }
+                  </span>
+                }
+              </div>
+            </a>
+
+            <div class="center-well">
+              <span class="vs-tag">VS</span>
+              @if (featured.away) {
+                @if (featured.home.points > 0 || featured.away.points > 0) {
+                  <span class="margin-val mono">{{ featured.margin.toFixed(2) }}</span>
+                  <span class="margin-caption">pts diff</span>
+                } @else {
+                  <span class="margin-caption">{{ featured.status }}</span>
+                }
+              } @else {
+                <span class="margin-caption">Bye</span>
+              }
+            </div>
+
+            @if (featured.away; as away) {
+              <a class="scoreboard-side is-away" [routerLink]="['/teams', away.rosterId]">
+                <div class="side-identity">
+                  <span class="ch-avatar sz-48 on-dark hero-avatar">
+                    @if (away.avatarUrl) {
+                      <img [src]="away.avatarUrl" [alt]="away.teamName" />
+                    } @else {
+                      <span>{{ away.initials }}</span>
+                    }
+                  </span>
+                  <div class="side-text">
+                    <span class="side-name">{{ away.teamName }}</span>
+                    <span class="side-sub mono">{{ away.managerName }} · {{ away.recordLabel }}</span>
+                  </div>
+                </div>
+
+                <div class="score-block">
+                  <span
+                    class="ch-display-metric featured-score"
+                    [class.is-signal-score]="away.isWinner"
+                  >
+                    {{ away.points.toFixed(2) }}
+                  </span>
+                  @if (featuredOdds()?.awayProj; as aProj) {
+                    <span class="proj-line mono">
+                      Proj {{ aProj.toFixed(2) }}
+                      @if (featuredOdds()?.awayWinPct !== null) {
+                        · {{ featuredOdds()!.awayWinPct }}% win
+                      }
+                    </span>
+                  }
+                </div>
+              </a>
+            } @else {
+              <div class="ch-feature-tile bye-box">
+                <span class="side-name">Bye Week</span>
+                <span class="side-sub">No opponent scheduled</span>
+              </div>
+            }
+          </div>
+
+          @if (featured.away && featuredOdds()?.homeWinPct !== null && featuredOdds()?.awayWinPct !== null) {
+            <div class="ch-odds-wrap">
+              <div class="ch-odds-labels mono">
+                <span>
+                  <strong>{{ featured.home.teamName }} · {{ featuredOdds()!.homeWinPct }}%</strong>
+                </span>
+                <span class="ch-desktop-only">Projected Win Odds</span>
+                <span>
+                  <strong>{{ featuredOdds()!.awayWinPct }}% · {{ featured.away.teamName }}</strong>
+                </span>
+              </div>
+              <div class="ch-odds-bar" aria-label="Projected win probability bar">
+                <div class="ch-odds-fill" [style.width.%]="featuredOdds()!.homeWinPct"></div>
+              </div>
+            </div>
+          }
+
+          <div class="featured-foot">
+            <span class="foot-summary">{{ featuredSummaryLine() }}</span>
+            <span class="foot-meta mono">Swipe matchups above or compare starters below</span>
+          </div>
+        </section>
+      }
+
+      @if (activeMatchup(); as detail) {
+        <app-matchup-detail-panel [matchup]="detail" [season]="data.league.season" />
+      }
+    }
+  </div>
+}

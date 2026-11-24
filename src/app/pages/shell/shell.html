@@ -1,0 +1,585 @@
+<a class="ch-skip-link" href="#main-content">Skip to main content</a>
+<div class="clubhouse-frame">
+  <aside class="sidebar" aria-label="Clubhouse navigation">
+    <div class="sidebar-top">
+      <a class="wordmark-row" routerLink="/">
+        <span class="league-mark">
+          @if (leagueAvatarUrl(); as url) {
+            <img [src]="url" alt="League mark" />
+          } @else {
+            <span>{{ leagueInitials() }}</span>
+          }
+        </span>
+        <span class="wordmark-text">
+          <span class="wordmark-title">The Clubhouse</span>
+          <span class="wordmark-sub">Sleeper Intelligence</span>
+        </span>
+      </a>
+
+      <button type="button" class="ch-qk-trigger" (click)="openQuickJump()" title="Quick Jump (Ctrl+K)">
+        <span>Quick jump...</span>
+        <kbd class="ch-qk-kbd mono">Ctrl K</kbd>
+      </button>
+
+      <nav class="rail-nav">
+        <span class="rail-group-label">Gameday</span>
+        <a
+          class="rail-item"
+          routerLink="/"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          title="Overview"
+        >
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+            <rect x="11" y="2.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+            <rect x="2.5" y="11" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+            <rect x="11" y="11" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+          </svg>
+          <span class="rail-label">Overview</span>
+        </a>
+
+        <a class="rail-item" routerLink="/matchups" routerLinkActive="is-active" title="Matchups">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M4 6.5H16M4 13.5H16M7 4L4 6.5L7 9M13 11L16 13.5L13 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="rail-label">Matchups</span>
+        </a>
+
+        <a class="rail-item" routerLink="/games" routerLinkActive="is-active" title="NFL Games">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <ellipse cx="10" cy="10" rx="7" ry="4.5" transform="rotate(-35 10 10)" stroke="currentColor" stroke-width="1.6" />
+            <path d="M8.5 8.5L11.5 11.5M9.5 7.5L8 9M12 10L10.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">NFL Games</span>
+        </a>
+
+        <a class="rail-item" routerLink="/watch-party" routerLinkActive="is-active" title="Watch Party">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.6" />
+            <circle cx="10" cy="10" r="2.2" fill="currentColor" />
+          </svg>
+          <span class="rail-label">Watch Party</span>
+          @if (hasLiveMatchups()) {
+            <span class="live-dot-badge mono">LIVE</span>
+          }
+        </a>
+
+        <span class="rail-group-label">League</span>
+        <a class="rail-item" routerLink="/standings" routerLinkActive="is-active" title="Standings">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M4 15.5V9.5M10 15.5V4.5M16 15.5V7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">Standings</span>
+        </a>
+
+        <a class="rail-item" routerLink="/playoffs" routerLinkActive="is-active" title="Playoffs">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M4 5.5H8.5V9.5H4M4 14.5H8.5V10.5H4M8.5 7.5H12.5V12.5H8.5M12.5 10H16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="rail-label">Playoffs</span>
+        </a>
+
+        <a class="rail-item" routerLink="/draft" routerLinkActive="is-active" title="Draft">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M4 5.5H16M4 10H16M4 14.5H11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">Draft</span>
+        </a>
+
+        <a class="rail-item" routerLink="/trades" routerLinkActive="is-active" title="Trades">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3.5 7.5H14.5M14.5 7.5L11.5 4.5M14.5 7.5L11.5 10.5M16.5 13.5H5.5M5.5 13.5L8.5 10.5M5.5 13.5L8.5 16.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="rail-label">Trades</span>
+        </a>
+
+        <a class="rail-item" routerLink="/history" routerLinkActive="is-active" title="League History">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M6 4H14V8C14 10.2 12.2 12 10 12C7.8 12 6 10.2 6 8V4ZM10 12V16M7 16H13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="rail-label">History</span>
+        </a>
+
+        <a class="rail-item" routerLink="/recaps" routerLinkActive="is-active" title="Weekly Recaps">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.6" />
+            <path d="M7 8H13M7 11H13M7 14H10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">Recaps</span>
+        </a>
+
+        <span class="rail-group-label">Scouting</span>
+        <a class="rail-item" routerLink="/teams" routerLinkActive="is-active" title="Teams">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 3L15.5 5.2V9.8C15.5 13.3 13.2 16 10 17C6.8 16 4.5 13.3 4.5 9.8V5.2L10 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          </svg>
+          <span class="rail-label">Teams</span>
+        </a>
+
+        <a class="rail-item" routerLink="/players" routerLinkActive="is-active" title="Players">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.6" />
+            <path d="M4.5 16.5C4.5 13.8 7 12 10 12C13 12 15.5 13.8 15.5 16.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">Players</span>
+        </a>
+
+        <a class="rail-item" routerLink="/insights" routerLinkActive="is-active" title="What-Ifs">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 3V5M10 15V17M4.5 10H2.5M17.5 10H15.5M14 6L15.4 4.6M4.6 15.4L6 14M14 14L15.4 15.4M4.6 4.6L6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <circle cx="10" cy="10" r="2.8" stroke="currentColor" stroke-width="1.6" />
+          </svg>
+          <span class="rail-label">What-Ifs</span>
+        </a>
+
+        <span class="rail-group-label">Reference</span>
+        <a class="rail-item" routerLink="/about" routerLinkActive="is-active" title="About &amp; Glossary">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="6.8" stroke="currentColor" stroke-width="1.6" />
+            <path d="M10 9.2V14M10 6.5H10.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">About</span>
+        </a>
+        <a class="rail-item" routerLink="/settings" routerLinkActive="is-active" title="Settings &amp; Themes">
+          <svg class="rail-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="2.7" stroke="currentColor" stroke-width="1.6" />
+            <path d="M10 3V4.6M10 15.4V17M3 10H4.6M15.4 10H17M5.1 5.1L6.2 6.2M13.8 13.8L14.9 14.9M14.9 5.1L13.8 6.2M6.2 13.8L5.1 14.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="rail-label">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      @if (sleeper.dashboard(); as data) {
+        @if (sleeper.myTeam(); as mine) {
+          <a class="ch-my-franchise-card" [routerLink]="['/teams', mine.rosterId]" [title]="mine.teamName">
+            <span class="ch-avatar sz-32 on-dark">
+              @if (mine.avatarUrl) {
+                <img [src]="mine.avatarUrl" [alt]="mine.teamName" />
+              } @else {
+                {{ mine.initials }}
+              }
+            </span>
+            <span class="my-team-copy">
+              <span class="my-team-kicker">My Franchise</span>
+              <span class="my-team-name">{{ mine.teamName }}</span>
+            </span>
+            <span class="my-team-rank mono">#{{ mine.standingsRank }} · {{ mine.recordLabel }}</span>
+          </a>
+        } @else {
+          <a class="pin-franchise-prompt" routerLink="/settings">
+            <span>Pin Your Franchise →</span>
+          </a>
+        }
+
+        @if (seasonOptions().length > 1) {
+          <div class="season-field">
+            <span class="season-label">Season</span>
+            <app-picker
+              [options]="seasonOptions()"
+              [value]="data.league.league_id"
+              [compact]="true"
+              tone="dark"
+              ariaLabel="Select league season"
+              sheetTitle="Switch Season"
+              (valueChange)="onSeasonSelect($event)"
+            />
+          </div>
+        }
+
+        <div class="league-footer-card">
+          <div class="league-footer-name">{{ data.league.name }}</div>
+          <div class="league-footer-meta mono">
+            {{ data.league.season }} · {{ scoringBadge() }} · {{ data.league.total_rosters }}T · Wk {{ data.currentWeek }}
+          </div>
+        </div>
+      }
+
+      @if (canInstallApp()) {
+        <button type="button" class="switch-league-btn is-install" (click)="installApp()">
+          Install Clubhouse App
+        </button>
+      }
+
+      <div class="footer-actions">
+        @if (sleeper.dashboard()) {
+          <button
+            type="button"
+            class="switch-league-btn is-sync"
+            [disabled]="sleeper.loading()"
+            (click)="refreshLeague()"
+            title="Sync league data"
+          >
+            {{ sleeper.loading() ? 'Syncing' : 'Sync' }}
+          </button>
+        }
+        <button type="button" class="switch-league-btn" (click)="openSwitchModal()" title="Switch or connect league">
+          <span class="switch-lbl">{{ sleeper.dashboard() ? 'Switch League' : 'Connect League' }}</span>
+        </button>
+        <button
+          type="button"
+          class="switch-league-btn is-theme"
+          (click)="toggleThemeMode()"
+          [attr.aria-label]="isDarkTheme() ? 'Switch to Light theme' : 'Switch to Dark theme'"
+          [title]="isDarkTheme() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        >
+          {{ isDarkTheme() ? '☀' : '☾' }}
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <header class="ch-mobile-topbar">
+    <button
+      type="button"
+      class="mobile-league-pill"
+      (click)="openSwitchModal()"
+      [attr.aria-label]="sleeper.dashboard() ? 'Switch Sleeper league' : 'Connect Sleeper league'"
+    >
+      <span class="league-mark sm">
+        @if (leagueAvatarUrl(); as url) {
+          <img [src]="url" alt="League" />
+        } @else {
+          <span>{{ leagueInitials() }}</span>
+        }
+      </span>
+      <span class="mobile-brand-copy">
+        <span class="mobile-title">{{ sleeper.league()?.name || 'The Clubhouse' }}</span>
+        @if (sleeper.dashboard(); as data) {
+          <span class="mobile-sub mono">{{ data.league.season }} · Wk {{ data.currentWeek }} · Switch ▾</span>
+        } @else {
+          <span class="mobile-sub mono">Connect League ▾</span>
+        }
+      </span>
+    </button>
+
+    <div class="mobile-top-actions">
+      <button
+        type="button"
+        class="mobile-icon-btn"
+        aria-label="Quick search"
+        (click)="openQuickJump()"
+      >
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.8" />
+          <path d="M13.2 13.2L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="mobile-icon-btn"
+        (click)="toggleThemeMode()"
+        [attr.aria-label]="isDarkTheme() ? 'Switch to Light theme' : 'Switch to Dark theme'"
+      >
+        {{ isDarkTheme() ? '☀' : '☾' }}
+      </button>
+      <a class="mobile-icon-btn" routerLink="/settings" aria-label="Settings">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="2.7" stroke="currentColor" stroke-width="1.6" />
+          <path d="M10 3V4.6M10 15.4V17M3 10H4.6M15.4 10H17M5.1 5.1L6.2 6.2M13.8 13.8L14.9 14.9M14.9 5.1L13.8 6.2M6.2 13.8L5.1 14.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="main-canvas" id="main-content" tabindex="-1">
+    <div class="canvas-inner">
+      @if (isOffline()) {
+        <div class="ch-status-banner is-offline" role="status" aria-live="polite">
+          <div class="ch-status-banner-copy">
+            <strong>Offline mode</strong>
+            <span>Showing cached league data. Live sync resumes when reconnected.</span>
+          </div>
+        </div>
+      }
+
+      @if (updateAvailable()) {
+        <div class="ch-status-banner is-update" role="status" aria-live="polite">
+          <div class="ch-status-banner-copy">
+            <strong>New Clubhouse update ready</strong>
+            <span>Reload to get the latest features and fixes.</span>
+          </div>
+          <div class="ch-status-banner-actions">
+            <button type="button" class="ch-btn ch-btn-primary is-compact" (click)="reloadForUpdate()">Reload Now</button>
+            <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="dismissUpdateBanner()">Later</button>
+          </div>
+        </div>
+      }
+
+      @if (showWhoAmIBanner()) {
+        <section class="ch-whoami-banner" aria-label="Pick your franchise">
+          <div class="ch-whoami-copy">
+            <span class="ch-whoami-badge">First-Time Setup</span>
+            <div>
+              <strong>Who are you in {{ sleeper.league()?.name || 'this league' }}?</strong>
+              <p>Pin your franchise to unlock personalized Trade Lab targets, Waiver Fits-Need badges, and Watch Party spotlight.</p>
+            </div>
+          </div>
+          <div class="ch-whoami-controls">
+            <app-picker
+              [options]="whoAmIOptions()"
+              [value]="selectedWhoAmIId() || null"
+              placeholder="Choose your team..."
+              sheetTitle="Who Are You?"
+              [searchable]="true"
+              ariaLabel="Select your franchise"
+              (valueChange)="selectedWhoAmIId.set($event)"
+            />
+            <button
+              type="button"
+              class="ch-btn ch-btn-primary is-compact"
+              [disabled]="!selectedWhoAmIId()"
+              (click)="confirmWhoAmI()"
+            >
+              Pin My Team
+            </button>
+            <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="dismissWhoAmI()">
+              Dismiss
+            </button>
+          </div>
+        </section>
+      }
+
+      @if (!sleeper.dashboard() && !sleeper.loading() && !isPublicRoute()) {
+        <app-league-connect-panel [isModal]="false" />
+      } @else {
+        <router-outlet />
+      }
+    </div>
+  </main>
+
+  <app-bottom-sheet
+    [open]="quickJumpOpen()"
+    title="Quick Jump"
+    subtitle="Search pages, teams, or NFL players"
+    maxWidth="560px"
+    (closed)="closeQuickJump()"
+  >
+    <div class="qk-body">
+      <input
+        class="ch-input"
+        type="search"
+        autofocus
+        aria-label="Search pages, teams, and players"
+        placeholder="Type a page, franchise name, or player..."
+        [ngModel]="quickQuery()"
+        (ngModelChange)="onQuickQueryChange($event)"
+      />
+      <div class="ch-qk-list" role="listbox">
+        @for (item of quickResults(); track item.id; let idx = $index) {
+          <button
+            type="button"
+            role="option"
+            class="ch-qk-item"
+            [class.is-keyed]="idx === activeQuickIdx()"
+            [attr.aria-selected]="idx === activeQuickIdx()"
+            (click)="navigateQuick(item)"
+          >
+            <div class="ch-stack">
+              <strong class="ch-qk-lbl">{{ item.label }}</strong>
+              <span class="ch-qk-sub">{{ item.sub }}</span>
+            </div>
+            <span
+              class="ch-chip"
+              [class.is-jade]="item.kind === 'Team'"
+              [class.is-neutral]="item.kind !== 'Team'"
+            >
+              {{ item.kind }}
+            </span>
+          </button>
+        } @empty {
+          <span class="ch-qk-sub ch-qk-empty">No matching results.</span>
+        }
+      </div>
+    </div>
+  </app-bottom-sheet>
+
+  @if (switchModalOpen()) {
+    <div
+      class="ch-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Connect or switch Sleeper league"
+      (click)="closeSwitchModal()"
+    >
+      <div class="ch-modal-sheet" (click)="$event.stopPropagation()">
+        <app-league-connect-panel [isModal]="true" (closed)="closeSwitchModal()" />
+      </div>
+    </div>
+  }
+
+  <app-bottom-sheet
+    [open]="mobileMoreOpen()"
+    title="Clubhouse Hub"
+    [subtitle]="sleeper.league()?.name || 'Navigate & Workspace'"
+    (closed)="closeMobileMore()"
+  >
+    <div class="hub-sheet">
+      @if (sleeper.dashboard(); as data) {
+        @if (sleeper.myTeam(); as mine) {
+          <a class="hub-my-team" [routerLink]="['/teams', mine.rosterId]" (click)="closeMobileMore()">
+            <span class="ch-avatar sz-40 on-dark">
+              @if (mine.avatarUrl) {
+                <img [src]="mine.avatarUrl" [alt]="mine.teamName" />
+              } @else {
+                {{ mine.initials }}
+              }
+            </span>
+            <div class="hub-team-copy">
+              <span class="hub-team-kicker">Pinned Franchise</span>
+              <strong class="hub-team-name">{{ mine.teamName }}</strong>
+            </div>
+            <span class="ch-chip is-signal mono">#{{ mine.standingsRank }} · {{ mine.recordLabel }}</span>
+          </a>
+        } @else {
+          <a class="hub-pin-cta" routerLink="/settings" (click)="closeMobileMore()">
+            <strong>Pin Your Franchise</strong>
+            <span>Unlock custom Trade &amp; Waiver targets →</span>
+          </a>
+        }
+
+        <div class="hub-quick-controls">
+          @if (seasonOptions().length > 1) {
+            <app-picker
+              [options]="seasonOptions()"
+              [value]="data.league.league_id"
+              ariaLabel="Season"
+              sheetTitle="Select Season"
+              (valueChange)="onSeasonSelect($event); closeMobileMore()"
+            />
+          }
+          <button
+            type="button"
+            class="ch-btn ch-btn-secondary"
+            [disabled]="sleeper.loading()"
+            (click)="refreshLeague()"
+          >
+            {{ sleeper.loading() ? 'Syncing...' : 'Sync Data' }}
+          </button>
+          <button type="button" class="ch-btn ch-btn-secondary" (click)="openSwitchModal()">
+            Switch League
+          </button>
+        </div>
+      }
+
+      <div class="hub-section">
+        <span class="ch-overline">Front Office &amp; Scouting</span>
+        <div class="hub-grid">
+          <a class="hub-tile" routerLink="/teams" (click)="closeMobileMore()">
+            <strong>Teams</strong>
+            <span>Rosters &amp; Start/Sit</span>
+          </a>
+          <a class="hub-tile" routerLink="/players" (click)="closeMobileMore()">
+            <strong>Players</strong>
+            <span>Waivers &amp; Compare</span>
+          </a>
+          <a class="hub-tile" routerLink="/trades" (click)="closeMobileMore()">
+            <strong>Trades</strong>
+            <span>Deals &amp; Sandbox</span>
+          </a>
+          <a class="hub-tile" routerLink="/games" (click)="closeMobileMore()">
+            <strong>NFL Games</strong>
+            <span>Live Slate &amp; Boxes</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hub-section">
+        <span class="ch-overline">Season &amp; Analytics</span>
+        <div class="hub-grid">
+          <a class="hub-tile" routerLink="/playoffs" (click)="closeMobileMore()">
+            <strong>Playoffs</strong>
+            <span>Bracket &amp; Odds</span>
+          </a>
+          <a class="hub-tile" routerLink="/draft" (click)="closeMobileMore()">
+            <strong>Draft</strong>
+            <span>Picks &amp; Recaps</span>
+          </a>
+          <a class="hub-tile" routerLink="/history" (click)="closeMobileMore()">
+            <strong>History</strong>
+            <span>All-Time &amp; H2H</span>
+          </a>
+          <a class="hub-tile" routerLink="/recaps" (click)="closeMobileMore()">
+            <strong>Recaps</strong>
+            <span>Weekly Gazette</span>
+          </a>
+          <a class="hub-tile" routerLink="/insights" (click)="closeMobileMore()">
+            <strong>What-Ifs</strong>
+            <span>Schedule &amp; Median</span>
+          </a>
+          <a class="hub-tile" routerLink="/settings" (click)="closeMobileMore()">
+            <strong>Settings</strong>
+            <span>Themes &amp; Alerts</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hub-footer-links">
+        <a class="ch-btn ch-btn-ghost" routerLink="/about" (click)="closeMobileMore()">About &amp; Metrics Glossary →</a>
+        @if (canInstallApp()) {
+          <button type="button" class="ch-btn ch-btn-primary" (click)="installApp()">Install Clubhouse App</button>
+        }
+      </div>
+    </div>
+  </app-bottom-sheet>
+
+  <nav class="ch-mobile-bottom-nav" aria-label="Mobile navigation">
+    <a
+      class="ch-bottom-item"
+      routerLink="/"
+      routerLinkActive="is-active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="closeMobileMore()"
+    >
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+        <rect x="11" y="2.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+        <rect x="2.5" y="11" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+        <rect x="11" y="11" width="6.5" height="6.5" rx="1.5" stroke="currentColor" stroke-width="1.6" />
+      </svg>
+      <span>Home</span>
+    </a>
+    <a class="ch-bottom-item" routerLink="/matchups" routerLinkActive="is-active" (click)="closeMobileMore()">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 6.5H16M4 13.5H16M7 4L4 6.5L7 9M13 11L16 13.5L13 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span>Matchups</span>
+    </a>
+    <a class="ch-bottom-item" routerLink="/watch-party" routerLinkActive="is-active" (click)="closeMobileMore()">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.6" />
+        <circle cx="10" cy="10" r="2.2" fill="currentColor" />
+      </svg>
+      <span>Watch{{ hasLiveMatchups() ? ' ●' : '' }}</span>
+    </a>
+    <a class="ch-bottom-item" routerLink="/standings" routerLinkActive="is-active" (click)="closeMobileMore()">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 15.5V9.5M10 15.5V4.5M16 15.5V7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+      <span>Standings</span>
+    </a>
+    <button
+      type="button"
+      class="ch-bottom-item"
+      [class.is-active]="mobileMoreOpen()"
+      [attr.aria-expanded]="mobileMoreOpen()"
+      (click)="toggleMobileMore()"
+    >
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="5" cy="10" r="1.5" fill="currentColor" />
+        <circle cx="10" cy="10" r="1.5" fill="currentColor" />
+        <circle cx="15" cy="10" r="1.5" fill="currentColor" />
+      </svg>
+      <span>More</span>
+    </button>
+  </nav>
+
+  @if (toast.message(); as toastText) {
+    <div class="ch-toast" role="status" aria-live="polite">
+      <span class="ch-toast-dot" aria-hidden="true"></span>
+      <span>{{ toastText }}</span>
+    </div>
+  }
+</div>

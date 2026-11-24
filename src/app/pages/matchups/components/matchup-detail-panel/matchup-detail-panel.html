@@ -1,0 +1,318 @@
+<section class="ch-card detail-card">
+  <div class="detail-head">
+    <div>
+      <span class="ch-overline">Lineup Comparison · Week {{ matchup().week }}</span>
+      <h2 class="ch-section-title">Starters, Projections & Bench</h2>
+    </div>
+    @if (playersLoading() || projectionsLoading()) {
+      <span class="sync-label">Syncing NFL players & projections...</span>
+    }
+  </div>
+
+  <div class="summary-strip">
+    <a class="ch-well side-summary" [routerLink]="['/teams', matchup().home.rosterId]">
+      <span class="summary-name">{{ matchup().home.teamName }}</span>
+      <span class="summary-nums mono">
+        Actual <strong>{{ matchup().home.points.toFixed(2) }}</strong>
+        @if (homeProjTotal(); as hProj) {
+          · Proj {{ hProj.toFixed(2) }}
+        }
+        · Bench {{ homeBenchTotal().toFixed(2) }}
+      </span>
+    </a>
+
+    @if (matchup().away; as away) {
+      <a class="ch-well side-summary" [routerLink]="['/teams', away.rosterId]">
+        <span class="summary-name">{{ away.teamName }}</span>
+        <span class="summary-nums mono">
+          Actual <strong>{{ away.points.toFixed(2) }}</strong>
+          @if (awayProjTotal(); as aProj) {
+            · Proj {{ aProj.toFixed(2) }}
+          }
+          · Bench {{ awayBenchTotal().toFixed(2) }}
+        </span>
+      </a>
+    }
+  </div>
+
+  @if (starterRows().length === 0) {
+    <div class="ch-well empty-detail">
+      Individual starter scores are not available for this matchup yet.
+    </div>
+  } @else {
+    <div class="mobile-lineups">
+      @for (row of starterRows(); track row.slotIndex) {
+        <div class="m-slot-card">
+          <div class="m-slot-head mono">
+            <span class="ch-overline">{{ row.home?.slotLabel ?? row.away?.slotLabel ?? 'FLX' }}</span>
+            <span>Starter Matchup</span>
+          </div>
+          @if (row.home; as h) {
+            <div class="m-slot-side">
+              <div class="m-slot-player">
+                <span class="pos-badge mono">{{ h.position }}</span>
+                <div class="m-slot-meta">
+                  <a class="ch-player-link" [routerLink]="['/players']" [queryParams]="{ player: h.playerId }">
+                    {{ h.name }}
+                  </a>
+                  <span class="nfl-team mono">
+                    {{ matchup().home.teamName }} · {{ h.nflTeam }}
+                    @if (getGameStatus(h.nflTeam); as gs) {
+                      · {{ gs.label }}
+                    }
+                  </span>
+                </div>
+              </div>
+              <div class="m-slot-pts mono">
+                <strong>{{ h.points.toFixed(2) }}</strong>
+                <span class="m-slot-proj">
+                  {{ h.isOnBye ? 'BYE' : h.projectedPoints != null ? 'P ' + h.projectedPoints.toFixed(1) : '—' }}
+                </span>
+              </div>
+            </div>
+          }
+          @if (row.away; as a) {
+            <div class="m-slot-side is-away">
+              <div class="m-slot-player">
+                <span class="pos-badge mono">{{ a.position }}</span>
+                <div class="m-slot-meta">
+                  <a class="ch-player-link" [routerLink]="['/players']" [queryParams]="{ player: a.playerId }">
+                    {{ a.name }}
+                  </a>
+                  <span class="nfl-team mono">
+                    {{ matchup().away?.teamName }} · {{ a.nflTeam }}
+                    @if (getGameStatus(a.nflTeam); as gs) {
+                      · {{ gs.label }}
+                    }
+                  </span>
+                </div>
+              </div>
+              <div class="m-slot-pts mono">
+                <strong>{{ a.points.toFixed(2) }}</strong>
+                <span class="m-slot-proj">
+                  {{ a.isOnBye ? 'BYE' : a.projectedPoints != null ? 'P ' + a.projectedPoints.toFixed(1) : '—' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (benchRows().length > 0) {
+        <div class="ch-overline mobile-bench-title">Bench Comparison</div>
+        @for (row of benchRows(); track row.slotIndex) {
+          <div class="m-slot-card is-bench">
+            @if (row.home; as h) {
+              <div class="m-slot-side">
+                <div class="m-slot-player">
+                  <span class="pos-badge mono">{{ h.position }}</span>
+                  <div class="m-slot-meta">
+                    <a class="ch-player-link" [routerLink]="['/players']" [queryParams]="{ player: h.playerId }">
+                      {{ h.name }}
+                    </a>
+                    <span class="nfl-team mono">{{ matchup().home.teamName }} · {{ h.nflTeam }}</span>
+                  </div>
+                </div>
+                <div class="m-slot-pts mono">
+                  <strong>{{ h.points.toFixed(2) }}</strong>
+                </div>
+              </div>
+            }
+            @if (row.away; as a) {
+              <div class="m-slot-side is-away">
+                <div class="m-slot-player">
+                  <span class="pos-badge mono">{{ a.position }}</span>
+                  <div class="m-slot-meta">
+                    <a class="ch-player-link" [routerLink]="['/players']" [queryParams]="{ player: a.playerId }">
+                      {{ a.name }}
+                    </a>
+                    <span class="nfl-team mono">{{ matchup().away?.teamName }} · {{ a.nflTeam }}</span>
+                  </div>
+                </div>
+                <div class="m-slot-pts mono">
+                  <strong>{{ a.points.toFixed(2) }}</strong>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <div class="ch-table-wrap desktop-lineups">
+      <table class="ch-table comparison-table">
+        <thead>
+          <tr>
+            <th>{{ matchup().home.teamName }}</th>
+            <th class="num">Proj</th>
+            <th class="num">Actual</th>
+            <th class="slot-col">Slot</th>
+            <th class="num">Actual</th>
+            <th class="num">Proj</th>
+            <th class="right-align">{{ matchup().away?.teamName ?? 'Bye' }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of starterRows(); track row.slotIndex) {
+            <tr>
+              <td>
+                @if (row.home; as h) {
+                  <div class="player-stack">
+                    <div class="player-cell">
+                      <span class="pos-badge mono">{{ h.position }}</span>
+                      <a
+                        class="ch-player-link"
+                        [routerLink]="['/players']"
+                        [queryParams]="{ player: h.playerId }"
+                      >
+                        {{ h.name }}
+                      </a>
+                      <span class="nfl-team mono">{{ h.nflTeam }}</span>
+                    </div>
+                    @if (getGameStatus(h.nflTeam); as gs) {
+                      <a
+                        class="live-game-sub mono"
+                        [class.is-final]="gs.state === 'post'"
+                        [routerLink]="['/games']"
+                        [queryParams]="{ week: matchup().week, team: h.nflTeam }"
+                      >
+                        @if (gs.state === 'in') {
+                          <span class="live-dot" [class.is-rz]="gs.isRedZone"></span>
+                        }
+                        <span>{{ gs.label }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="num muted-col">
+                @if (row.home?.isOnBye) {
+                  <span class="bye-label">BYE</span>
+                } @else {
+                  {{ row.home?.projectedPoints != null ? row.home!.projectedPoints!.toFixed(2) : '—' }}
+                }
+              </td>
+              <td class="num">{{ row.home ? row.home.points.toFixed(2) : '—' }}</td>
+              <td class="slot-col mono">{{ row.home?.slotLabel ?? row.away?.slotLabel ?? 'FLX' }}</td>
+              <td class="num">{{ row.away ? row.away.points.toFixed(2) : '—' }}</td>
+              <td class="num muted-col">
+                @if (row.away?.isOnBye) {
+                  <span class="bye-label">BYE</span>
+                } @else {
+                  {{ row.away?.projectedPoints != null ? row.away!.projectedPoints!.toFixed(2) : '—' }}
+                }
+              </td>
+              <td class="right-align">
+                @if (row.away; as a) {
+                  <div class="player-stack is-right">
+                    <div class="player-cell is-right">
+                      <span class="nfl-team mono">{{ a.nflTeam }}</span>
+                      <a
+                        class="ch-player-link"
+                        [routerLink]="['/players']"
+                        [queryParams]="{ player: a.playerId }"
+                      >
+                        {{ a.name }}
+                      </a>
+                      <span class="pos-badge mono">{{ a.position }}</span>
+                    </div>
+                    @if (getGameStatus(a.nflTeam); as gs) {
+                      <a
+                        class="live-game-sub mono is-right"
+                        [class.is-final]="gs.state === 'post'"
+                        [routerLink]="['/games']"
+                        [queryParams]="{ week: matchup().week, team: a.nflTeam }"
+                      >
+                        @if (gs.state === 'in') {
+                          <span class="live-dot" [class.is-rz]="gs.isRedZone"></span>
+                        }
+                        <span>{{ gs.label }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+
+          @if (benchRows().length > 0) {
+            <tr class="section-divider-row">
+              <td colspan="7" class="ch-overline">Bench</td>
+            </tr>
+            @for (row of benchRows(); track row.slotIndex) {
+              <tr class="is-bench">
+                <td>
+                  @if (row.home; as h) {
+                    <div class="player-stack">
+                      <div class="player-cell">
+                        <span class="pos-badge mono">{{ h.position }}</span>
+                        <a
+                          class="ch-player-link"
+                          [routerLink]="['/players']"
+                          [queryParams]="{ player: h.playerId }"
+                        >
+                          {{ h.name }}
+                        </a>
+                        <span class="nfl-team mono">{{ h.nflTeam }}</span>
+                      </div>
+                      @if (getGameStatus(h.nflTeam); as gs) {
+                        <div class="live-game-sub mono" [class.is-final]="gs.state === 'post'">
+                          @if (gs.state === 'in') {
+                            <span class="live-dot" [class.is-rz]="gs.isRedZone"></span>
+                          }
+                          <span>{{ gs.label }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </td>
+                <td class="num muted-col">
+                  @if (row.home?.isOnBye) {
+                    <span class="bye-label">BYE</span>
+                  } @else {
+                    {{ row.home?.projectedPoints != null ? row.home!.projectedPoints!.toFixed(2) : '—' }}
+                  }
+                </td>
+                <td class="num">{{ row.home ? row.home.points.toFixed(2) : '—' }}</td>
+                <td class="slot-col mono">BN</td>
+                <td class="num">{{ row.away ? row.away.points.toFixed(2) : '—' }}</td>
+                <td class="num muted-col">
+                  @if (row.away?.isOnBye) {
+                    <span class="bye-label">BYE</span>
+                  } @else {
+                    {{ row.away?.projectedPoints != null ? row.away!.projectedPoints!.toFixed(2) : '—' }}
+                  }
+                </td>
+                <td class="right-align">
+                  @if (row.away; as a) {
+                    <div class="player-stack is-right">
+                      <div class="player-cell is-right">
+                        <span class="nfl-team mono">{{ a.nflTeam }}</span>
+                        <a
+                          class="ch-player-link"
+                          [routerLink]="['/players']"
+                          [queryParams]="{ player: a.playerId }"
+                        >
+                          {{ a.name }}
+                        </a>
+                        <span class="pos-badge mono">{{ a.position }}</span>
+                      </div>
+                      @if (getGameStatus(a.nflTeam); as gs) {
+                        <div class="live-game-sub mono is-right" [class.is-final]="gs.state === 'post'">
+                          @if (gs.state === 'in') {
+                            <span class="live-dot" [class.is-rz]="gs.isRedZone"></span>
+                          }
+                          <span>{{ gs.label }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -1,0 +1,108 @@
+<section class="ch-card snapshot-card">
+  <div class="snapshot-header">
+    <div>
+      <span class="ch-overline">League Standings</span>
+      <h2 class="ch-section-title">Top Contenders</h2>
+    </div>
+    <a class="full-link" routerLink="/standings">Full metrics →</a>
+  </div>
+
+  <div class="ch-mobile-feed mobile-snapshot">
+    @for (team of orderedTeams(); track team.rosterId) {
+      <a
+        class="snap-mobile-row"
+        [class.is-my-row]="myRosterId() === team.rosterId"
+        [routerLink]="['/teams', team.rosterId]"
+      >
+        <div class="snap-left">
+          <span class="snap-rank mono">{{ team.standingsRank }}</span>
+          <span class="ch-avatar sz-32">
+            @if (team.avatarUrl) {
+              <img [src]="team.avatarUrl" [alt]="team.teamName" />
+            } @else {
+              <span>{{ team.initials }}</span>
+            }
+          </span>
+          <div class="snap-id">
+            <div class="snap-name-line">
+              <strong class="team-name">{{ team.teamName }}</strong>
+              @if (myRosterId() === team.rosterId) {
+                <span class="ch-chip is-jade">You</span>
+              }
+            </div>
+            <span class="snap-rec mono">{{ team.recordLabel }}</span>
+          </div>
+        </div>
+
+        <div class="snap-right">
+          <span class="mono snap-pf">{{ team.pointsFor.toFixed(1) }} PF</span>
+          <span
+            class="ch-chip mono snap-streak"
+            [class.is-positive]="isWinStreak(team.streak)"
+            [class.is-negative]="!isWinStreak(team.streak) && team.streak !== '—'"
+          >
+            {{ team.streak }}
+          </span>
+        </div>
+      </a>
+
+      @if (team.standingsRank === playoffTeams()) {
+        <div class="cutoff-line mono">Playoff Cut (Top {{ playoffTeams() }})</div>
+      }
+    }
+  </div>
+
+  <div class="ch-table-wrap ch-desktop-table">
+    <table class="ch-table snapshot-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>Record</th>
+          <th class="num">PF</th>
+          <th class="num">PA</th>
+          <th>Streak</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (team of orderedTeams(); track team.rosterId) {
+          <tr
+            class="is-clickable"
+            [class.playoff-edge]="team.standingsRank === playoffTeams()"
+            [class.is-my-row]="myRosterId() === team.rosterId"
+            [routerLink]="['/teams', team.rosterId]"
+          >
+            <td class="mono rank-cell">{{ team.standingsRank }}</td>
+            <td>
+              <div class="team-cell">
+                <span class="ch-avatar sz-32">
+                  @if (team.avatarUrl) {
+                    <img [src]="team.avatarUrl" [alt]="team.teamName" />
+                  } @else {
+                    <span>{{ team.initials }}</span>
+                  }
+                </span>
+                <span class="team-name">{{ team.teamName }}</span>
+                @if (myRosterId() === team.rosterId) {
+                  <span class="ch-chip is-jade">You</span>
+                }
+              </div>
+            </td>
+            <td class="mono">{{ team.recordLabel }}</td>
+            <td class="num strong-num">{{ team.pointsFor.toFixed(2) }}</td>
+            <td class="num muted-num">{{ team.pointsAgainst.toFixed(2) }}</td>
+            <td>
+              <span
+                class="ch-chip mono"
+                [class.is-positive]="isWinStreak(team.streak)"
+                [class.is-negative]="!isWinStreak(team.streak) && team.streak !== '—'"
+              >
+                {{ team.streak }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

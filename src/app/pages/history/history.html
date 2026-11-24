@@ -1,0 +1,489 @@
+@if ((sleeper.loading() && !sleeper.dashboard()) || (loading() && !history())) {
+  <div class="ch-page ch-stack history-page">
+    <div class="ch-stack">
+      <span class="ch-skeleton" style="width: 220px; height: 32px;"></span>
+      <span class="ch-skeleton" style="width: 280px; height: 36px;"></span>
+    </div>
+    <span class="ch-skeleton-dark" style="height: 165px;"></span>
+    <span class="ch-skeleton" style="height: 320px;"></span>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack history-page ch-enter">
+    <app-page-header
+      [overline]="
+        'Franchise Heritage · ' +
+        (sleeper.seasons().length || 1) +
+        ' Season' +
+        ((sleeper.seasons().length || 1) === 1 ? '' : 's')
+      "
+      title="League History & Rivalries"
+      context="All-time champions, career manager stats, league record book, and head-to-head H2H matrices."
+      mobileContext="Champions, careers & all-time H2H"
+    >
+      <div class="ch-flex-row header-controls">
+        <div class="ch-segmented history-tabs" role="tablist" aria-label="History sections">
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="activeTab() === 'hall'"
+            (click)="setTab('hall')"
+          >
+            Hall &amp; Records
+          </button>
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="activeTab() === 'careers'"
+            (click)="setTab('careers')"
+          >
+            Careers
+          </button>
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="activeTab() === 'rivalry'"
+            (click)="setTab('rivalry')"
+          >
+            H2H Matrix
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="ch-btn ch-btn-secondary is-compact"
+          [disabled]="loading()"
+          (click)="refreshHistory()"
+        >
+          {{ loading() ? 'Syncing...' : 'Sync' }}
+        </button>
+
+        <button
+          type="button"
+          class="ch-btn ch-btn-ghost is-compact ch-desktop-only"
+          (click)="copyShareLink()"
+        >
+          Share Link
+        </button>
+      </div>
+    </app-page-header>
+
+    @if (error(); as err) {
+      <section class="ch-card ch-empty-state">
+        <h2 class="ch-section-title">History Unavailable</h2>
+        <p>{{ err }}</p>
+      </section>
+    } @else if (history(); as h) {
+      @if (topStats(); as stats) {
+        <section class="ch-feature ch-stack history-hero">
+          <div class="ch-row-between hero-head">
+            <div>
+              <span class="ch-overline on-dark">{{ data.league.name }} Lineage</span>
+              <h2 class="hero-title">All-Time Legacy Leaders</h2>
+            </div>
+            <span class="ch-chip is-dark-muted mono">
+              {{ h.seasonsCount }} Season{{ h.seasonsCount === 1 ? '' : 's' }} Merged
+            </span>
+          </div>
+
+          <div class="ch-stat-strip-4 hero-rail">
+            <div class="ch-feature-tile">
+              <span class="ch-team-hero-stat">Most Titles</span>
+              <strong class="ch-team-hero-val tile-name">{{ stats.mostTitles.latestTeamName }}</strong>
+              <span class="ch-team-hero-sub mono is-signal">
+                {{ stats.mostTitles.titles }} Title{{ stats.mostTitles.titles === 1 ? '' : 's' }} ·
+                {{ stats.mostTitles.displayName }}
+              </span>
+            </div>
+
+            <div class="ch-feature-tile">
+              <span class="ch-team-hero-stat">Highest Win %</span>
+              <strong class="ch-team-hero-val tile-name">{{ stats.bestWinPct.latestTeamName }}</strong>
+              <span class="ch-team-hero-sub mono">
+                {{ stats.bestWinPct.winPct.toFixed(1) }}% ({{ stats.bestWinPct.wins }}-{{
+                  stats.bestWinPct.losses
+                }})
+              </span>
+            </div>
+
+            <div class="ch-feature-tile">
+              <span class="ch-team-hero-stat">All-Time Points</span>
+              <strong class="ch-team-hero-val tile-name">{{ stats.pfKing.latestTeamName }}</strong>
+              <span class="ch-team-hero-sub mono">
+                {{ stats.pfKing.totalPf.toFixed(0) }} career PF · {{ stats.pfKing.seasonsPlayed }} yrs
+              </span>
+            </div>
+
+            @if (stats.topRecord; as rec) {
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">{{ rec.label }}</span>
+                <strong class="ch-team-hero-val mono is-signal">{{ rec.stat }}</strong>
+                <span class="ch-team-hero-sub mono">{{ rec.holder }} ({{ rec.season }})</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeTab() === 'hall') {
+        <div class="ch-bento">
+          <section class="ch-card ch-stack span-7 hall-card">
+            <div class="ch-row-between">
+              <div>
+                <span class="ch-overline">Championship Ledger</span>
+                <h2 class="ch-section-title">Hall of Champions</h2>
+              </div>
+              <span class="ch-chip is-neutral mono">{{ h.hallOfChampions.length }} Crowned</span>
+            </div>
+
+            @if (h.hallOfChampions.length === 0) {
+              <div class="ch-well empty-box">
+                No completed championship brackets recorded yet across linked seasons.
+              </div>
+            } @else {
+              <div class="ch-stack champ-list">
+                @for (entry of h.hallOfChampions; track entry.leagueId) {
+                  <article class="ch-well ch-stack champ-row">
+                    <div class="ch-row-between champ-top">
+                      <div class="ch-flex-row champ-id">
+                        <span class="ch-chip is-jade mono">{{ entry.season }}</span>
+                        <strong class="champ-team">{{ entry.champTeamName }}</strong>
+                        <span class="muted-txt">({{ entry.champManagerName }})</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="ch-btn ch-btn-ghost is-compact"
+                        (click)="openSeason(entry.leagueId)"
+                      >
+                        Load {{ entry.season }} →
+                      </button>
+                    </div>
+
+                    <div class="ch-flex-row mono champ-meta">
+                      <span>Record: {{ entry.champRecord }}</span>
+                      @if (entry.runnerUpName) {
+                        <span>
+                          · Beat {{ entry.runnerUpName }}
+                          @if (entry.titleScore) {
+                            ({{ entry.titleScore }})
+                          }
+                        </span>
+                      }
+                      <span>· PF King: {{ entry.topScorerTeam }} ({{ entry.topScorerPf.toFixed(1) }})</span>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="ch-card ch-stack span-5 records-card">
+            <div>
+              <span class="ch-overline">Franchise Extremes</span>
+              <h2 class="ch-section-title">All-Time Record Book</h2>
+            </div>
+
+            @if (h.records.length === 0) {
+              <div class="ch-well empty-box">Play regular-season weeks to build the record book.</div>
+            } @else {
+              <div class="ch-stack record-list">
+                @for (rec of h.records; track rec.id) {
+                  <div class="ch-well ch-stack record-tile">
+                    <div class="ch-row-between">
+                      <span class="ch-overline">{{ rec.label }}</span>
+                      <span class="ch-chip is-neutral mono">{{ rec.season }}</span>
+                    </div>
+                    <strong class="rec-stat mono">{{ rec.stat }}</strong>
+                    <div class="rec-holder">{{ rec.holder }}</div>
+                    <div class="rec-ctx">{{ rec.context }}</div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        </div>
+      } @else if (activeTab() === 'careers') {
+        <section class="ch-card table-panel">
+          <div class="panel-head">
+            <span class="ch-overline">Cumulative Ledger</span>
+            <h2 class="ch-section-title">All-Time Manager Standings</h2>
+          </div>
+
+          <div class="ch-mobile-feed mobile-careers-feed">
+            @for (mgr of h.managers; track mgr.managerKey; let idx = $index) {
+              <article class="ch-data-card" [class.is-highlighted]="mgr.titles > 0">
+                <div class="ch-row-between card-top">
+                  <div class="ch-flex-row card-id">
+                    <span class="rank-pill mono">#{{ idx + 1 }}</span>
+                    <span class="ch-avatar sz-32">
+                      @if (mgr.avatarUrl) {
+                        <img [src]="mgr.avatarUrl" [alt]="mgr.latestTeamName" />
+                      } @else {
+                        {{ mgr.initials }}
+                      }
+                    </span>
+                    <div class="ch-stack id-meta">
+                      @if (mgr.latestRosterId) {
+                        <a class="ch-player-link card-name" [routerLink]="['/teams', mgr.latestRosterId]">
+                          {{ mgr.latestTeamName }}
+                        </a>
+                      } @else {
+                        <strong class="card-name">{{ mgr.latestTeamName }}</strong>
+                      }
+                      <span class="mgr-sub">{{ mgr.displayName }} · {{ mgr.seasonsPlayed }} yrs</span>
+                    </div>
+                  </div>
+                  @if (mgr.titles > 0) {
+                    <span class="ch-chip is-signal mono">{{ mgr.titles }} Title{{ mgr.titles === 1 ? '' : 's' }}</span>
+                  }
+                </div>
+
+                <div class="ch-data-card-metrics">
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">All-Time W-L</span>
+                    <strong class="ch-data-metric-val mono">
+                      {{ mgr.wins }}-{{ mgr.losses }}@if (mgr.ties > 0) {-{{ mgr.ties }}}
+                    </strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Win %</span>
+                    <strong class="ch-data-metric-val mono">{{ mgr.winPct.toFixed(1) }}%</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Playoffs</span>
+                    <strong class="ch-data-metric-val mono">{{ mgr.playoffApps }}×</strong>
+                  </div>
+                  <div class="ch-data-metric">
+                    <span class="ch-data-metric-lbl">Career PF</span>
+                    <strong class="ch-data-metric-val mono">{{ mgr.totalPf.toFixed(0) }}</strong>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table careers-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Manager / Franchise</th>
+                  <th class="num">Yrs</th>
+                  <th class="num">Titles</th>
+                  <th class="num">Playoffs</th>
+                  <th>All-Time W–L</th>
+                  <th class="num">Win %</th>
+                  <th class="num">Career PF</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (mgr of h.managers; track mgr.managerKey; let idx = $index) {
+                  <tr>
+                    <td class="mono muted-txt">{{ idx + 1 }}</td>
+                    <td>
+                      <div class="ch-flex-row">
+                        <span class="ch-avatar sz-32">
+                          @if (mgr.avatarUrl) {
+                            <img [src]="mgr.avatarUrl" [alt]="mgr.latestTeamName" />
+                          } @else {
+                            {{ mgr.initials }}
+                          }
+                        </span>
+                        <div class="ch-stack">
+                          @if (mgr.latestRosterId) {
+                            <a class="ch-player-link" [routerLink]="['/teams', mgr.latestRosterId]">
+                              {{ mgr.latestTeamName }}
+                            </a>
+                          } @else {
+                            <strong>{{ mgr.latestTeamName }}</strong>
+                          }
+                          <span class="mgr-sub">{{ mgr.displayName }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="num mono">{{ mgr.seasonsPlayed }}</td>
+                    <td class="num mono">
+                      @if (mgr.titles > 0) {
+                        <span class="ch-chip is-signal">{{ mgr.titles }}</span>
+                      } @else {
+                        0
+                      }
+                    </td>
+                    <td class="num mono">{{ mgr.playoffApps }}</td>
+                    <td class="mono">{{ mgr.wins }}-{{ mgr.losses }}@if (mgr.ties > 0) {-{{ mgr.ties }}}</td>
+                    <td class="num mono">{{ mgr.winPct.toFixed(1) }}%</td>
+                    <td class="num mono strong-num">{{ mgr.totalPf.toFixed(1) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      } @else {
+        <div class="ch-stack rivalry-wrap">
+          @if (rivalryPair(); as pair) {
+            <section class="ch-card ch-stack spotlight-rivalry">
+              <div class="rivalry-controls">
+                <div>
+                  <span class="ch-overline">Head-to-Head Matchup History</span>
+                  <h2 class="ch-section-title">Rivalry Breakdown</h2>
+                </div>
+
+                <div class="selector-pair">
+                  <app-picker
+                    class="mgr-picker"
+                    [options]="managerOptions()"
+                    [value]="pair.mgrA.managerKey"
+                    ariaLabel="Select first manager"
+                    sheetTitle="Select Primary Manager"
+                    [searchable]="true"
+                    (valueChange)="selectManagerA($event)"
+                  />
+                  <button
+                    type="button"
+                    class="ch-btn ch-btn-ghost is-compact swap-btn"
+                    title="Swap managers"
+                    aria-label="Swap managers"
+                    (click)="swapRivalryPair()"
+                  >
+                    ⇄
+                  </button>
+                  <app-picker
+                    class="mgr-picker"
+                    [options]="managerOptions()"
+                    [value]="pair.mgrB.managerKey"
+                    ariaLabel="Select second manager"
+                    sheetTitle="Select Opponent Manager"
+                    [searchable]="true"
+                    (valueChange)="selectManagerB($event)"
+                  />
+                </div>
+              </div>
+
+              @if (pair.record; as rec) {
+                <div class="ch-stat-strip-4 rivalry-kpis">
+                  <div class="ch-well ch-stack">
+                    <span class="ch-overline">Series Record</span>
+                    <strong class="rivalry-big mono">{{ rec.wins }}-{{ rec.losses }}@if (rec.ties > 0) {-{{ rec.ties }}}</strong>
+                    <span class="mgr-sub">
+                      {{ rec.wins > rec.losses ? pair.mgrA.displayName + ' leads' : rec.losses > rec.wins ? pair.mgrB.displayName + ' leads' : 'Series tied' }} · {{ rec.games }} games
+                    </span>
+                  </div>
+                  <div class="ch-well ch-stack">
+                    <span class="ch-overline">Series Points</span>
+                    <strong class="rivalry-big mono">{{ rec.pfFor.toFixed(0) }}–{{ rec.pfAgainst.toFixed(0) }}</strong>
+                    <span class="mgr-sub">{{ pair.mgrA.displayName }} vs {{ pair.mgrB.displayName }}</span>
+                  </div>
+                  <div class="ch-well ch-stack">
+                    <span class="ch-overline">Best / Worst Margin</span>
+                    <strong class="rivalry-big mono">+{{ rec.largestWinMargin.toFixed(1) }} / -{{ rec.largestLossMargin.toFixed(1) }}</strong>
+                    <span class="mgr-sub">Streak: {{ rec.streak }}</span>
+                  </div>
+                  <div class="ch-well ch-stack">
+                    <span class="ch-overline">Last Meeting</span>
+                    <strong class="rivalry-last mono">{{ rec.lastMeeting }}</strong>
+                    <span class="mgr-sub">Tap any opponent card below</span>
+                  </div>
+                </div>
+              } @else {
+                <div class="ch-well empty-box">No recorded head-to-head games between these two managers.</div>
+              }
+            </section>
+          }
+
+          <section class="ch-card table-panel">
+            <div class="panel-head">
+              <span class="ch-overline">All-Time H2H Matrix</span>
+              <h2 class="ch-section-title">
+                @if (rivalryPair(); as pair) {
+                  {{ pair.mgrA.latestTeamName }} vs League
+                } @else {
+                  Manager vs Opponent Records
+                }
+              </h2>
+            </div>
+
+            @if (rivalryPair(); as pair) {
+              <div class="ch-mobile-feed mobile-h2h-feed">
+                @for (item of mobileH2hRows(); track item.opp.managerKey) {
+                  <button
+                    type="button"
+                    class="ch-data-card is-interactive h2h-mobile-card"
+                    [class.is-highlighted]="item.isSelected"
+                    (click)="selectManagerB(item.opp.managerKey)"
+                  >
+                    <div class="ch-row-between">
+                      <div class="ch-flex-row card-id">
+                        <span class="ch-avatar sz-32">
+                          @if (item.opp.avatarUrl) {
+                            <img [src]="item.opp.avatarUrl" [alt]="item.opp.latestTeamName" />
+                          } @else {
+                            {{ item.opp.initials }}
+                          }
+                        </span>
+                        <div class="ch-stack id-meta">
+                          <strong class="card-name">vs {{ item.opp.latestTeamName }}</strong>
+                          <span class="mgr-sub">{{ item.opp.displayName }}</span>
+                        </div>
+                      </div>
+                      @if (item.record; as rec) {
+                        <span
+                          class="ch-chip mono"
+                          [class.is-positive]="rec.wins > rec.losses"
+                          [class.is-negative]="rec.losses > rec.wins"
+                          [class.is-neutral]="rec.wins === rec.losses"
+                        >
+                          {{ rec.wins }}-{{ rec.losses }}
+                        </span>
+                      } @else {
+                        <span class="ch-chip is-neutral mono">0-0</span>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="ch-table-wrap ch-desktop-table">
+              <table class="ch-table matrix-table">
+                <thead>
+                  <tr>
+                    <th class="sticky-col">Manager \ Opp</th>
+                    @for (col of h.managers; track col.managerKey) {
+                      <th class="center-col">{{ col.displayName }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of h.managers; track row.managerKey) {
+                    <tr>
+                      <td class="sticky-col row-mgr">{{ row.displayName }}</td>
+                      @for (col of h.managers; track col.managerKey) {
+                        @let cell = h.h2hMatrix[row.managerKey]?.[col.managerKey];
+                        <td
+                          class="center-col mono h2h-cell"
+                          [class.is-self]="row.managerKey === col.managerKey"
+                          [class.is-win]="cell && cell.wins > cell.losses"
+                          [class.is-loss]="cell && cell.losses > cell.wins"
+                          (click)="selectRivalryPair(row.managerKey, col.managerKey)"
+                        >
+                          @if (row.managerKey === col.managerKey) {
+                            —
+                          } @else if (cell) {
+                            {{ cell.wins }}-{{ cell.losses }}
+                          } @else {
+                            0-0
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      }
+    }
+  </div>
+}

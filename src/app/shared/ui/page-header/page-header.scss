@@ -1,0 +1,37 @@
+@use 'mixins' as *;
+
+.ch-page-header {
+  @include stack(var(--space-3));
+
+  @include mq(md) {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+}
+
+.header-copy {
+  @include stack(2px);
+  min-width: 0;
+}
+
+.title-row {
+  @include row(var(--space-2), center, space-between);
+}
+
+.mobile-meta-chip {
+  font-size: 11px;
+  min-height: 24px;
+  padding: 1px 8px;
+}
+
+.header-actions {
+  @include row(var(--space-2), center, flex-start, wrap);
+  min-width: 0;
+
+  @include mq(md) {
+    justify-content: flex-end;
+  }
+}

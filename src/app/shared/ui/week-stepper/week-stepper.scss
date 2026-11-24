@@ -1,0 +1,11 @@
+@use 'mixins' as *;
+
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.stepper-shell {
+  @include row(6px, center);
+  min-width: 0;
+}

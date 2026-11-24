@@ -1,0 +1,116 @@
+<section class="ch-feature featured-panel ch-cq">
+  <div class="featured-top">
+    <div class="featured-kicker">
+      <span class="ch-overline dark-overline">
+        {{ isUserMatchup() ? 'Your Matchup' : 'Featured League Matchup' }}
+      </span>
+    </div>
+
+    <div class="featured-controls">
+      @if (weekOptions().length > 0) {
+        <app-picker
+          [options]="weekOptions()"
+          [value]="week()"
+          [compact]="true"
+          tone="dark"
+          ariaLabel="Select featured matchup week"
+          sheetTitle="Select Week"
+          (valueChange)="weekSelected.emit($event)"
+        />
+      }
+
+      @if (matchup(); as m) {
+        <span
+          class="ch-chip mono"
+          [class.is-signal]="m.status === 'Live'"
+          [class.is-dark-muted]="m.status !== 'Live'"
+        >
+          {{ m.status }}
+        </span>
+      }
+
+      <a class="all-link" routerLink="/matchups">All matchups →</a>
+      @if (matchup()?.status === 'Live') {
+        <a class="watch-cta mono" routerLink="/watch-party">Watch Party →</a>
+      }
+    </div>
+  </div>
+
+  @if (matchup(); as m) {
+    <div class="matchup-stage">
+      <a class="team-side" [routerLink]="['/teams', m.home.rosterId]">
+        <div class="side-head">
+          <span class="ch-avatar sz-48 on-dark side-avatar">
+            @if (m.home.avatarUrl) {
+              <img [src]="m.home.avatarUrl" [alt]="m.home.teamName" />
+            } @else {
+              <span>{{ m.home.initials }}</span>
+            }
+          </span>
+          <div class="side-meta">
+            <span class="side-name">{{ m.home.teamName }}</span>
+            <span class="side-record mono">{{ m.home.managerName }} · {{ m.home.recordLabel }}</span>
+          </div>
+        </div>
+        <div
+          class="ch-display-metric side-score"
+          [class.is-signal-score]="m.home.isWinner"
+        >
+          {{ m.home.points.toFixed(2) }}
+        </div>
+      </a>
+
+      <div class="vs-column">
+        <span class="vs-divider">VS</span>
+        @if (m.away) {
+          <span class="margin-sub mono">{{ m.margin.toFixed(2) }} diff</span>
+        }
+      </div>
+
+      @if (m.away; as away) {
+        <a class="team-side is-away" [routerLink]="['/teams', away.rosterId]">
+          <div class="side-head">
+            <span class="ch-avatar sz-48 on-dark side-avatar">
+              @if (away.avatarUrl) {
+                <img [src]="away.avatarUrl" [alt]="away.teamName" />
+              } @else {
+                <span>{{ away.initials }}</span>
+              }
+            </span>
+            <div class="side-meta">
+              <span class="side-name">{{ away.teamName }}</span>
+              <span class="side-record mono">{{ away.managerName }} · {{ away.recordLabel }}</span>
+            </div>
+          </div>
+          <div
+            class="ch-display-metric side-score"
+            [class.is-signal-score]="away.isWinner"
+          >
+            {{ away.points.toFixed(2) }}
+          </div>
+        </a>
+      } @else {
+        <div class="ch-feature-tile bye-tile">
+          <span class="side-name">Bye Week</span>
+          <span class="side-record">No opponent scheduled</span>
+        </div>
+      }
+    </div>
+
+    @if (m.away && (m.home.points > 0 || m.away.points > 0)) {
+      <div class="share-track" aria-hidden="true">
+        <div class="share-fill" [style.width.%]="scoreSharePct()"></div>
+      </div>
+    }
+
+    <div class="featured-footer">
+      <span class="context-line">{{ leaderText() }}</span>
+      <span class="mono footer-note">Week {{ m.week }} · Actual points</span>
+    </div>
+  } @else {
+    <div class="empty-featured">
+      <h2 class="empty-title">No matchups scheduled for Week {{ week() }}</h2>
+      <p class="empty-copy">Scores will appear once Sleeper opens matchups for this week.</p>
+    </div>
+  }
+</section>

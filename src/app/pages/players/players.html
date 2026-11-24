@@ -1,0 +1,996 @@
+@if ((sleeper.loading() && !sleeper.dashboard()) || sleeper.playersLoading()) {
+  <div class="ch-page ch-stack players-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 210px; height: 34px;"></span>
+      <span class="ch-skeleton" style="width: 260px; height: 38px;"></span>
+    </header>
+    <div class="ch-bento">
+      <div class="ch-card span-5"><span class="ch-skeleton" style="height: 460px;"></span></div>
+      <div class="span-7 ch-stack"><span class="ch-skeleton-dark" style="height: 240px;"></span></div>
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack players-page ch-enter">
+    <app-page-header
+      [overline]="'Player Scouting Lab · Week ' + data.currentWeek"
+      title="Players"
+      context="Select any player from the directory to open a full scouting, usage, and projection breakdown."
+      [mobileContext]="'Week ' + data.currentWeek + ' Scouting, Waivers & Compare'"
+    >
+      @if (positionalLeaders().length > 0) {
+        <div class="leader-pills">
+          <span class="leaders-lbl ch-desktop-only">Leaders:</span>
+          @for (leader of positionalLeaders(); track leader.playerId) {
+            <button
+              type="button"
+              class="ch-chip leader-pill mono"
+              [class.is-jade]="spotlightPlayer()?.playerId === leader.playerId"
+              [class.is-neutral]="spotlightPlayer()?.playerId !== leader.playerId"
+              (click)="pickPlayerFromDirectory(leader.playerId)"
+            >
+              {{ leader.position }}1 · {{ leader.name }}
+            </button>
+          }
+        </div>
+      }
+    </app-page-header>
+
+    <app-filter-bar
+      [searchQuery]="searchQuery()"
+      searchPlaceholder="Search player, NFL team, manager..."
+      [activeFilterCount]="activeFilterCount()"
+      sheetTitle="Filter Players & Waivers"
+      [resultLabel]="filteredPlayers().length + ' matched'"
+      (searchQueryChange)="searchQuery.set($event)"
+      (clearAll)="clearAllFilters()"
+    >
+      <div class="ch-segmented" role="tablist" aria-label="Filter by position">
+        @for (pos of positions; track pos) {
+          <button
+            type="button"
+            class="ch-segment"
+            [class.is-active]="positionFilter() === pos"
+            (click)="setPosition(pos)"
+          >
+            {{ pos }}
+          </button>
+        }
+      </div>
+
+      <div class="ch-flex-row ownership-row">
+        <button
+          type="button"
+          class="ch-chip filter-btn"
+          [class.is-jade]="ownershipFilter() === 'all'"
+          [class.is-neutral]="ownershipFilter() !== 'all'"
+          (click)="setOwnership('all')"
+        >
+          All ({{ allLeaguePlayers().length }})
+        </button>
+        <button
+          type="button"
+          class="ch-chip filter-btn"
+          [class.is-jade]="ownershipFilter() === 'rostered'"
+          [class.is-neutral]="ownershipFilter() !== 'rostered'"
+          (click)="setOwnership('rostered')"
+        >
+          Rostered
+        </button>
+        <button
+          type="button"
+          class="ch-chip filter-btn"
+          [class.is-jade]="ownershipFilter() === 'free_agent'"
+          [class.is-neutral]="ownershipFilter() !== 'free_agent'"
+          (click)="setOwnership('free_agent')"
+        >
+          Free Agents
+        </button>
+        <button
+          type="button"
+          class="ch-chip filter-btn"
+          [class.is-jade]="ownershipFilter() === 'trending'"
+          [class.is-neutral]="ownershipFilter() !== 'trending'"
+          (click)="setOwnership('trending')"
+        >
+          Trending FA
+        </button>
+      </div>
+
+      <app-picker
+        class="ch-below-lg"
+        [options]="sortOptions"
+        [value]="sortColumn()"
+        [compact]="true"
+        ariaLabel="Sort players by"
+        sheetTitle="Sort Players"
+        (valueChange)="onSortSelect($event)"
+      />
+
+      <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="copyShareLink()">
+        Share View ↗
+      </button>
+    </app-filter-bar>
+
+    @if (compareIds().length > 0) {
+      <section class="ch-card ch-row-between compare-tray">
+        <div class="ch-flex-row">
+          <span class="ch-overline">Player Compare ({{ compareIds().length }}/3)</span>
+          @for (rep of compareReports(); track rep.player.playerId) {
+            <button
+              type="button"
+              class="ch-chip is-jade filter-btn"
+              (click)="toggleCompare(rep.player.playerId)"
+            >
+              {{ rep.player.name }} ({{ rep.player.position }}) ×
+            </button>
+          }
+        </div>
+        <div class="ch-flex-row">
+          @if (compareIds().length >= 2) {
+            <button
+              type="button"
+              class="ch-btn is-compact"
+              [class.ch-btn-primary]="!compareOpen()"
+              [class.ch-btn-secondary]="compareOpen()"
+              (click)="compareOpen.set(!compareOpen())"
+            >
+              {{ compareOpen() ? 'Hide Comparison' : 'Compare (' + compareIds().length + ')' }}
+            </button>
+          } @else {
+            <span class="muted-cell">Select 1 more player (+ Compare)</span>
+          }
+          <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="clearCompare()">
+            Clear
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (compareOpen() && compareReports().length >= 2 && compareWinners(); as win) {
+      <section class="ch-card ch-stack compare-studio">
+        <div class="ch-row-between">
+          <div>
+            <span class="ch-overline">Side-by-Side Comparison</span>
+            <h2 class="ch-section-title">Head-to-Head Scouting Breakdown</h2>
+          </div>
+          <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="copyShareLink()">
+            Copy Link
+          </button>
+        </div>
+
+        <!-- Mobile Card Compare -->
+        <div class="ch-mobile-feed">
+          @for (rep of compareReports(); track rep.player.playerId) {
+            <div class="ch-data-card">
+              <div class="ch-row-between">
+                <div>
+                  <strong>{{ rep.player.name }}</strong>
+                  <div class="muted-cell mono">
+                    {{ rep.player.position }} #{{ rep.posRank }} · {{ rep.player.nflTeam }} · {{ rep.player.fantasyTeamName ?? 'FA' }}
+                  </div>
+                </div>
+                <strong class="mono" [class.is-pos]="rep.player.avgPoints === win.maxPpg && win.maxPpg > 0">
+                  {{ rep.player.avgPoints.toFixed(1) }} PPG
+                </strong>
+              </div>
+              <div class="ch-data-card-metrics m-cmp-metrics">
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">Season</span>
+                  <span class="ch-data-metric-val mono">{{ rep.player.seasonPoints.toFixed(1) }}</span>
+                </div>
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">Median</span>
+                  <span class="ch-data-metric-val mono" [class.is-pos]="rep.medianPoints === win.maxMed && win.maxMed > 0">
+                    {{ rep.medianPoints.toFixed(1) }}
+                  </span>
+                </div>
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">Boom / Flr</span>
+                  <span class="ch-data-metric-val mono" [class.is-pos]="rep.boomWeeks20 === win.maxBoom && win.maxBoom > 0">
+                    {{ rep.boomWeeks20 }}B / {{ rep.floorWeeks12 }}F
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop Compare Table -->
+        <div class="ch-table-wrap ch-desktop-table">
+          <table class="ch-table compare-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <th class="num">
+                    <div class="compare-hdr">
+                      <strong>{{ rep.player.name }}</strong>
+                      <span class="muted-cell mono">
+                        {{ rep.player.position }} #{{ rep.posRank }} · {{ rep.player.nflTeam }} ·
+                        {{ rep.player.fantasyTeamName ?? 'FA' }}
+                      </span>
+                    </div>
+                  </th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>PPG / Season</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num" [class.is-winner-cell]="rep.player.avgPoints === win.maxPpg && win.maxPpg > 0">
+                    {{ rep.player.avgPoints.toFixed(1) }} ({{ rep.player.seasonPoints.toFixed(1) }})
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td>Median / Week</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num" [class.is-winner-cell]="rep.medianPoints === win.maxMed && win.maxMed > 0">
+                    {{ rep.medianPoints.toFixed(1) }}
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td>Best Week</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num">
+                    {{ rep.bestWeek ? rep.bestWeek.points.toFixed(1) + ' (W' + rep.bestWeek.week + ')' : '—' }}
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td>Boom (20+) / Floor (12+)</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num" [class.is-winner-cell]="rep.boomWeeks20 === win.maxBoom && win.maxBoom > 0">
+                    {{ rep.boomWeeks20 }}B / {{ rep.floorWeeks12 }}F
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td>Consistency (σ)</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num" [class.is-winner-cell]="rep.stdDevPoints === win.minStd && rep.player.gamesPlayed >= 3">
+                    {{ rep.consistencyLabel }} (±{{ rep.stdDevPoints.toFixed(1) }})
+                  </td>
+                }
+              </tr>
+              <tr>
+                <td>Recent 3G Form</td>
+                @for (rep of compareReports(); track rep.player.playerId) {
+                  <td class="num">
+                    {{ rep.recent3Avg !== null ? rep.recent3Avg.toFixed(1) + ' PPG' : '—' }}
+                  </td>
+                }
+              </tr>
+              @if (projectionsReady()) {
+                <tr>
+                  <td>Week {{ data.currentWeek }} Proj</td>
+                  @for (rep of compareReports(); track rep.player.playerId) {
+                    @let cp = playerProjection(rep.player);
+                    <td class="num" [class.is-winner-cell]="cp !== null && cp === win.maxProj && win.maxProj > 0">
+                      {{ cp !== null ? cp.toFixed(1) : '—' }}
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (waiverRadar().length > 0 && ownershipFilter() !== 'rostered') {
+      <section class="ch-card ch-stack radar-card">
+        <div class="ch-row-between radar-head">
+          <div>
+            <span class="ch-overline">Sleeper 24h Wire Activity &amp; Roster Fit</span>
+            <h2 class="ch-section-title">Waiver Wire &amp; Trending Radar</h2>
+          </div>
+          @if (myNeedsLabel(); as needsLbl) {
+            <span class="ch-chip is-jade mono">
+              Your Roster Needs: {{ needsLbl }}
+            </span>
+          }
+        </div>
+
+        <div class="radar-grid">
+          @for (item of waiverRadar(); track item.player.playerId) {
+            <button
+              type="button"
+              class="ch-well ch-stack radar-tile"
+              [class.is-need-fit]="item.fitsNeed"
+              (click)="pickPlayerFromDirectory(item.player.playerId)"
+            >
+              <div class="ch-row-between">
+                <div class="ch-flex-row">
+                  <span class="ch-pos-pill mono" [attr.data-pos]="item.player.position">
+                    {{ item.player.position }}
+                  </span>
+                  <strong class="radar-name">{{ item.player.name }}</strong>
+                </div>
+                @if (item.trendingAdds > 0) {
+                  <span class="ch-chip is-positive mono">+{{ item.trendingAdds }} adds</span>
+                }
+              </div>
+
+              <div class="ch-row-between radar-sub mono">
+                <span>{{ item.player.nflTeam }} · {{ item.player.avgPoints.toFixed(1) }} PPG</span>
+                @if (item.fitsNeed) {
+                  <span class="need-tag">Fits Need</span>
+                } @else if (item.proj !== null) {
+                  <span>Proj {{ item.proj.toFixed(1) }}</span>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Mobile Master/Detail Pane Toggle (<1024px) -->
+    <div class="ch-below-lg mobile-pane-switch">
+      <div class="ch-segmented" role="tablist" aria-label="Switch directory and scouting panel">
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="mobilePane() === 'pool'"
+          (click)="mobilePane.set('pool')"
+        >
+          Player Pool ({{ filteredPlayers().length }})
+        </button>
+        <button
+          type="button"
+          class="ch-segment"
+          [class.is-active]="mobilePane() === 'detail'"
+          (click)="mobilePane.set('detail')"
+        >
+          {{ spotlightPlayer()?.name ?? 'Scouting Report' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ch-bento workbench-grid">
+      <section class="ch-card span-5 directory-panel" [class.pane-hidden-mobile]="mobilePane() !== 'pool'">
+        <div class="ch-row-between dir-head">
+          <div>
+            <span class="ch-overline">Player Pool</span>
+            <h2 class="ch-section-title">Select to Analyze</h2>
+          </div>
+          <span class="ch-chip is-neutral mono">{{ filteredPlayers().length }} matched</span>
+        </div>
+
+        @if (filteredPlayers().length === 0) {
+          <div class="ch-well empty-players">No players matched your current filter.</div>
+        } @else {
+          <!-- Mobile Touchable Directory Feed -->
+          <div class="ch-mobile-feed mobile-dir-feed">
+            @for (player of visiblePlayers(); track player.playerId) {
+              @let proj = playerProjection(player);
+              <div
+                class="ch-data-card dir-mobile-card"
+                [class.is-highlighted]="spotlightPlayer()?.playerId === player.playerId"
+                (click)="pickPlayerFromDirectory(player.playerId)"
+              >
+                <div class="ch-row-between">
+                  <div class="dir-player">
+                    <span class="ch-pos-pill mono" [attr.data-pos]="player.position">
+                      {{ player.position }}
+                    </span>
+                    <div class="ch-stack dir-meta">
+                      <div class="ch-flex-row">
+                        <strong class="player-name">{{ player.name }}</strong>
+                        @if (player.injuryStatus) {
+                          <span class="ch-chip is-warning">{{ player.injuryStatus }}</span>
+                        } @else if (isPlayerOnBye(player)) {
+                          <span class="ch-chip is-neutral">BYE</span>
+                        }
+                      </div>
+                      <span class="dir-sub mono">
+                        {{ player.nflTeam }} · {{ player.fantasyTeamName ?? 'Free Agent' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="dir-card-right">
+                    <div class="dir-card-pts mono">
+                      <strong>{{ player.avgPoints.toFixed(1) }}</strong>
+                      <span>PPG · {{ player.seasonPoints.toFixed(0) }}t</span>
+                      @if (projectionsReady() && proj !== null) {
+                        <span>Proj {{ proj.toFixed(1) }}</span>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="dir-compare-btn mono"
+                      [class.is-added]="isInCompare(player.playerId)"
+                      (click)="toggleCompare(player.playerId, $event)"
+                      [title]="isInCompare(player.playerId) ? 'Remove from compare' : 'Add to compare'"
+                    >
+                      {{ isInCompare(player.playerId) ? '✓' : '+' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Desktop Precision Directory Table -->
+          <div class="ch-table-wrap ch-sticky-scroll dir-scroll ch-desktop-table">
+            <table class="ch-table dir-table">
+              <thead>
+                <tr>
+                  <th [attr.aria-sort]="ariaSort('name')">
+                    <button type="button" class="sort-btn" (click)="toggleSort('name')">
+                      Player {{ sortArrow('name') }}
+                    </button>
+                  </th>
+                  <th class="num" [attr.aria-sort]="ariaSort('avgPoints')">
+                    <button type="button" class="sort-btn" (click)="toggleSort('avgPoints')">
+                      PPG {{ sortArrow('avgPoints') }}
+                    </button>
+                  </th>
+                  @if (projectionsReady()) {
+                    <th class="num" [attr.aria-sort]="ariaSort('proj')">
+                      <button type="button" class="sort-btn" (click)="toggleSort('proj')">
+                        Proj {{ sortArrow('proj') }}
+                      </button>
+                    </th>
+                  }
+                  <th class="num" [attr.aria-sort]="ariaSort('seasonPoints')">
+                    <button type="button" class="sort-btn" (click)="toggleSort('seasonPoints')">
+                      Total {{ sortArrow('seasonPoints') }}
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (player of visiblePlayers(); track player.playerId) {
+                  @let proj = playerProjection(player);
+                  <tr
+                    class="is-clickable"
+                    [class.is-selected-row]="spotlightPlayer()?.playerId === player.playerId"
+                    (click)="pickPlayerFromDirectory(player.playerId)"
+                  >
+                    <td>
+                      <div class="dir-player">
+                        <span class="ch-pos-pill mono" [attr.data-pos]="player.position">
+                          {{ player.position }}
+                        </span>
+                        <div class="ch-stack dir-meta">
+                          <div class="ch-flex-row">
+                            <strong class="player-name">{{ player.name }}</strong>
+                            @if (player.injuryStatus) {
+                              <span class="ch-chip is-warning">{{ player.injuryStatus }}</span>
+                            } @else if (isPlayerOnBye(player)) {
+                              <span class="ch-chip is-neutral">BYE</span>
+                            }
+                          </div>
+                          <span class="dir-sub mono">
+                            {{ player.nflTeam }} ·
+                            {{ player.fantasyTeamName ?? 'Free Agent' }}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          class="dir-compare-btn mono"
+                          [class.is-added]="isInCompare(player.playerId)"
+                          (click)="toggleCompare(player.playerId, $event)"
+                          [title]="isInCompare(player.playerId) ? 'Remove from compare' : 'Add to compare'"
+                        >
+                          {{ isInCompare(player.playerId) ? '✓' : '+' }}
+                        </button>
+                      </div>
+                    </td>
+                    <td class="num mono">{{ player.avgPoints.toFixed(1) }}</td>
+                    @if (projectionsReady()) {
+                      <td class="num mono muted-cell">
+                        {{ proj !== null ? proj.toFixed(1) : '—' }}
+                      </td>
+                    }
+                    <td class="num mono strong-num">{{ player.seasonPoints.toFixed(1) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (visiblePlayers().length < filteredPlayers().length) {
+            <div class="ch-row-between table-footer">
+              <span class="footer-count mono">
+                Showing {{ visiblePlayers().length }} of {{ filteredPlayers().length }}
+              </span>
+              <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="showMore()">
+                Show more
+              </button>
+            </div>
+          }
+        }
+      </section>
+
+      <div id="player-analysis-studio" class="span-7 ch-stack analysis-col" [class.pane-hidden-mobile]="mobilePane() !== 'detail'">
+        @if (analysis(); as rep) {
+          @let p = rep.player;
+          @let m = rep.meta;
+          @let nfl = nflMatchupContext();
+
+          <div class="ch-below-lg detail-back-bar">
+            <button type="button" class="ch-btn ch-btn-secondary" (click)="mobilePane.set('pool')">
+              ← Back to Player Pool
+            </button>
+          </div>
+
+          <section class="ch-feature ch-stack analysis-hero">
+            <div class="ch-row-between hero-top">
+              <div class="hero-id">
+                @if (nfl?.teamLogo; as logoUrl) {
+                  <img class="ch-nfl-crest" [src]="logoUrl" [alt]="m.nflTeam" />
+                } @else {
+                  <span class="ch-nfl-mono mono">{{ m.nflTeam }}</span>
+                }
+
+                <div class="ch-stack hero-titles">
+                  <div class="ch-flex-row">
+                    <span class="ch-chip is-jade mono">{{ p.position }} #{{ rep.posRank }}</span>
+                    <span class="ch-chip is-dark-muted mono">
+                      Overall #{{ rep.overallRank }}
+                    </span>
+                    <span class="ch-chip is-dark-muted">{{ rep.currentSlotRole }}</span>
+                    @if (m.injuryStatus) {
+                      <span class="ch-chip is-warning">
+                        {{ m.injuryStatus }}@if (m.injuryBodyPart) { · {{ m.injuryBodyPart }}}
+                      </span>
+                    }
+                  </div>
+                  <h2 class="hero-name">{{ p.name }}</h2>
+                  <div class="hero-bio mono">
+                    {{ spotlightBioLine() }}
+                    @if (m.depthOrder) { · Depth #{{ m.depthOrder }}}
+                  </div>
+                </div>
+              </div>
+
+              <div class="ch-flex-row hero-right-actions">
+                <button
+                  type="button"
+                  class="ch-btn is-compact"
+                  [class.ch-btn-primary]="isInCompare(p.playerId)"
+                  [class.ch-btn-secondary]="!isInCompare(p.playerId)"
+                  (click)="toggleCompare(p.playerId)"
+                >
+                  {{ isInCompare(p.playerId) ? '✓ In Compare' : '+ Compare' }}
+                </button>
+                <div class="ch-record-well hero-context-well">
+                  <div class="ch-stack">
+                    <span class="ch-team-hero-stat">Fantasy Rights</span>
+                    @if (p.fantasyRosterId && p.fantasyTeamName) {
+                      <a class="owner-link" [routerLink]="['/teams', p.fantasyRosterId]">
+                        {{ p.fantasyTeamName }} →
+                      </a>
+                    } @else {
+                      <strong class="owner-fa">Available Free Agent</strong>
+                    }
+                    @if (nfl) {
+                      @if (nfl.hasGame && nfl.oppAbbr) {
+                        <a
+                          class="ch-team-hero-sub mono"
+                          [routerLink]="['/games']"
+                          [queryParams]="{ week: data.currentWeek, team: m.nflTeam }"
+                        >
+                          {{ nfl.prefix }} {{ nfl.oppAbbr }} · {{ nfl.statusLabel }}
+                          @if (nfl.scoreLine) { ({{ nfl.scoreLine }}) } ↗
+                        </a>
+                      } @else {
+                        <span class="ch-team-hero-sub mono">
+                          {{ nfl.onBye ? 'Week ' + data.currentWeek + ' · BYE' : 'Week ' + data.currentWeek }}
+                        </span>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ch-stat-strip-4">
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">Season Points</span>
+                <strong class="ch-team-hero-val mono is-signal">{{ p.seasonPoints.toFixed(1) }}</strong>
+                <span class="ch-team-hero-sub mono">
+                  {{ rep.pctOfPosLeader }}% of {{ p.position }} #1
+                </span>
+              </div>
+
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">Scoring Pace</span>
+                <strong class="ch-team-hero-val mono">{{ p.avgPoints.toFixed(2) }}</strong>
+                <span class="ch-team-hero-sub mono">
+                  @if (rep.recent3Avg !== null) {
+                    Last 3: {{ rep.recent3Avg.toFixed(1) }} ({{ rep.recentDelta >= 0 ? '+' : '' }}{{ rep.recentDelta.toFixed(1) }})
+                  } @else {
+                    {{ p.gamesPlayed }} game{{ p.gamesPlayed === 1 ? '' : 's' }} logged
+                  }
+                </span>
+              </div>
+
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">Wk {{ data.currentWeek }} Proj</span>
+                <strong class="ch-team-hero-val mono">
+                  {{ nfl?.proj !== null && nfl?.proj !== undefined ? nfl!.proj!.toFixed(1) : '—' }}
+                </strong>
+                <span class="ch-team-hero-sub mono">
+                  {{ nfl?.odds ?? (nfl?.onBye ? 'Bye Week' : 'Sleeper projection') }}
+                </span>
+              </div>
+
+              <div class="ch-feature-tile">
+                <span class="ch-team-hero-stat">Ceiling / Floor</span>
+                <strong class="ch-team-hero-val mono">
+                  @if (rep.bestWeek && rep.worstWeek) {
+                    {{ rep.bestWeek.points.toFixed(1) }} / {{ rep.worstWeek.points.toFixed(1) }}
+                  } @else {
+                    —
+                  }
+                </strong>
+                <span class="ch-team-hero-sub mono">
+                  @if (rep.bestWeek && rep.worstWeek) {
+                    High W{{ rep.bestWeek.week }} · Low W{{ rep.worstWeek.week }}
+                  } @else {
+                    No weekly range yet
+                  }
+                </span>
+              </div>
+            </div>
+          </section>
+
+          @if (chartGeometry(); as chart) {
+            <section class="ch-card ch-stack chart-card">
+              <div class="ch-row-between">
+                <div>
+                  <span class="ch-overline">Production Curve</span>
+                  <h3 class="ch-section-title">Weekly Fantasy Output</h3>
+                </div>
+                <div class="ch-flex-row mono chart-legend">
+                  <span class="leg-item"><span class="sw sw-start"></span>Started</span>
+                  <span class="leg-item"><span class="sw sw-bench"></span>Bench / FA</span>
+                  <span class="leg-item"><span class="sw sw-avg"></span>Avg {{ p.avgPoints.toFixed(1) }}</span>
+                </div>
+              </div>
+
+              <div class="svg-wrap">
+                <svg
+                  [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+                  role="img"
+                  [attr.aria-label]="p.name + ' weekly points chart'"
+                >
+                  @for (tick of chart.ticks; track tick.val) {
+                    <line
+                      class="ref-line"
+                      [attr.x1]="chart.padL"
+                      [attr.x2]="chart.width - chart.padR"
+                      [attr.y1]="tick.y"
+                      [attr.y2]="tick.y"
+                    />
+                    <text class="axis-text" [attr.x]="chart.padL - 6" [attr.y]="tick.y + 4" text-anchor="end">
+                      {{ tick.val }}
+                    </text>
+                  }
+
+                  <line
+                    class="avg-line"
+                    [attr.x1]="chart.padL"
+                    [attr.x2]="chart.width - chart.padR"
+                    [attr.y1]="chart.avgY"
+                    [attr.y2]="chart.avgY"
+                  />
+
+                  @for (node of chart.nodes; track node.log.week) {
+                    <g
+                      class="bar-node"
+                      [class.is-started]="node.log.usage === 'Started'"
+                      [class.is-focused]="inspectedWeek() === node.log.week"
+                      (click)="inspectWeek(node.log.week)"
+                    >
+                      <rect
+                        class="bar-rect"
+                        [attr.x]="node.x"
+                        [attr.y]="node.y"
+                        [attr.width]="node.w"
+                        [attr.height]="node.h"
+                        rx="4"
+                      />
+                      <text class="bar-val-lbl" [attr.x]="node.cx" [attr.y]="node.y - 4" text-anchor="middle">
+                        {{ node.log.points.toFixed(0) }}
+                      </text>
+                      <text class="axis-text" [attr.x]="node.cx" [attr.y]="chart.height - 8" text-anchor="middle">
+                        W{{ node.log.week }}
+                      </text>
+                    </g>
+                  }
+                </svg>
+              </div>
+            </section>
+          }
+
+          <div class="ch-stat-grid-2">
+            <section class="ch-card ch-stat-tile">
+              <div class="ch-row-between">
+                <span class="ch-overline">Consistency &amp; Usage</span>
+                <span
+                  class="ch-chip"
+                  [class.is-jade]="rep.consistencyLabel === 'Rock Solid'"
+                  [class.is-neutral]="rep.consistencyLabel !== 'Rock Solid'"
+                >
+                  {{ rep.consistencyLabel }}
+                </span>
+              </div>
+
+              <div class="ch-stat-grid-2 metric-pairs">
+                <div class="ch-well ch-stack mini-stat">
+                  <span class="mini-lbl">Median / σ</span>
+                  <strong class="mono">{{ rep.medianPoints.toFixed(1) }} · ±{{ rep.stdDevPoints.toFixed(1) }}</strong>
+                </div>
+                <div class="ch-well ch-stack mini-stat">
+                  <span class="mini-lbl">20+ / 12+ Wks</span>
+                  <strong class="mono">{{ rep.boomWeeks20 }} boom · {{ rep.floorWeeks12 }} solid</strong>
+                </div>
+              </div>
+
+              <div class="ch-stack usage-summary">
+                <div class="ch-row-between usage-caption mono">
+                  <span>Started: {{ rep.startedWeeks }} wks ({{ rep.startedPoints.toFixed(1) }} pts)</span>
+                  <span>Bench: {{ rep.benchedWeeks }} wks ({{ rep.benchedPoints.toFixed(1) }} pts)</span>
+                </div>
+                <div class="ch-meter">
+                  <div
+                    class="ch-meter-fill"
+                    [style.width.%]="p.seasonPoints > 0 ? (rep.startedPoints / p.seasonPoints) * 100 : 0"
+                  ></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="ch-card ch-stat-tile">
+              <div class="ch-row-between">
+                <span class="ch-overline">League Provenance</span>
+                @if (rep.draftPedigree; as dp) {
+                  <a
+                    class="ch-chip is-neutral mono"
+                    [routerLink]="['/draft']"
+                    [queryParams]="{ team: dp.draftedByRosterId }"
+                  >
+                    @if (dp.auctionAmount !== null) {
+                      ${{ dp.auctionAmount }} Draft →
+                    } @else {
+                      Pick {{ dp.pickLabel }} →
+                    }
+                  </a>
+                } @else {
+                  <span class="ch-chip is-neutral">Undrafted / Off-Board</span>
+                }
+              </div>
+
+              @if (rep.draftPedigree; as dp) {
+                <p class="prov-line">
+                  Drafted by
+                  <a class="team-link" [routerLink]="['/teams', dp.draftedByRosterId]">
+                    {{ dp.draftedByTeam }}
+                  </a>
+                  @if (dp.posDraftRank) {
+                    <span class="mono">
+                      ({{ p.position }} #{{ dp.posDraftRank }} off board → Now #{{ rep.posRank }})
+                    </span>
+                  }
+                </p>
+              }
+
+              @if (rep.transactions.length === 0) {
+                <p class="prov-empty">No trades or waiver claims recorded this season.</p>
+              } @else {
+                <div class="ch-stack tx-trail">
+                  @for (tx of rep.transactions.slice(0, 4); track tx.transactionId) {
+                    <div class="ch-row-between tx-row">
+                      <div class="ch-flex-row">
+                        <a
+                          class="ch-chip"
+                          [routerLink]="['/trades']"
+                          [queryParams]="{ tab: tx.kind === 'Trade' ? 'trades' : 'moves', team: tx.rosterId ?? undefined }"
+                          [class.is-jade]="tx.kind === 'Trade'"
+                          [class.is-neutral]="tx.kind !== 'Trade'"
+                        >
+                          W{{ tx.week }} {{ tx.kind }} ↗
+                        </a>
+                        <span class="tx-detail">{{ tx.detail }}</span>
+                      </div>
+                      <span class="mono muted-cell">{{ tx.dateLabel }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+          </div>
+
+          <section class="ch-card table-panel">
+            <div class="ch-row-between panel-head">
+              <div class="ch-segmented" role="tablist" aria-label="Player detail views">
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="analysisTab() === 'gamelog'"
+                  (click)="setAnalysisTab('gamelog')"
+                >
+                  Game Log ({{ rep.weekLogs.length }})
+                </button>
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="analysisTab() === 'peers'"
+                  (click)="setAnalysisTab('peers')"
+                >
+                  {{ p.position }} Comps ({{ rep.posRank }}/{{ rep.posTotalCount }})
+                </button>
+              </div>
+              @if (inspectedWeek(); as wk) {
+                <button type="button" class="ch-btn ch-btn-ghost reset-wk" (click)="inspectedWeek.set(null)">
+                  Clear Wk {{ wk }} ×
+                </button>
+              }
+            </div>
+
+            @if (analysisTab() === 'gamelog') {
+              @if (rep.weekLogs.length === 0) {
+                <div class="ch-well empty-players">No weekly fantasy scores logged yet.</div>
+              } @else {
+                <div class="ch-mobile-feed mobile-sub-feed">
+                  @for (log of rep.weekLogs; track log.week) {
+                    <div
+                      class="ch-data-card ch-interactive"
+                      [class.is-highlighted]="inspectedWeek() === log.week"
+                      (click)="inspectWeek(log.week)"
+                    >
+                      <div class="ch-row-between">
+                        <div class="ch-flex-row">
+                          <span class="mono"><strong>W{{ log.week }}</strong></span>
+                          <span class="ch-chip" [class.is-jade]="log.usage === 'Started'" [class.is-neutral]="log.usage !== 'Started'">
+                            {{ log.usage }}
+                          </span>
+                          <span class="muted-cell">{{ log.fantasyTeamName ?? 'Free Agent' }}</span>
+                        </div>
+                        <div class="dir-card-pts mono">
+                          <strong>{{ log.points.toFixed(2) }}</strong>
+                          <span [class.is-pos]="log.deltaFromAvg > 0" [class.is-neg]="log.deltaFromAvg < 0">
+                            {{ log.deltaFromAvg >= 0 ? '+' : '' }}{{ log.deltaFromAvg.toFixed(1) }} avg
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <div class="ch-table-wrap ch-desktop-table">
+                  <table class="ch-table">
+                    <thead>
+                      <tr>
+                        <th>Wk</th>
+                        <th>Role</th>
+                        <th>Franchise</th>
+                        <th class="num">vs Avg</th>
+                        <th class="num">Points</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (log of rep.weekLogs; track log.week) {
+                        <tr
+                          [class.is-selected-row]="inspectedWeek() === log.week"
+                          (click)="inspectWeek(log.week)"
+                          class="is-clickable"
+                        >
+                          <td class="mono">W{{ log.week }}</td>
+                          <td>
+                            <span
+                              class="ch-chip"
+                              [class.is-jade]="log.usage === 'Started'"
+                              [class.is-neutral]="log.usage !== 'Started'"
+                            >
+                              {{ log.usage }}
+                            </span>
+                          </td>
+                          <td>
+                            @if (log.fantasyRosterId && log.fantasyTeamName) {
+                              <a
+                                class="team-link"
+                                [routerLink]="['/teams', log.fantasyRosterId]"
+                                (click)="$event.stopPropagation()"
+                              >
+                                {{ log.fantasyTeamName }}
+                              </a>
+                            } @else {
+                              <span class="muted-cell">Free Agent</span>
+                            }
+                          </td>
+                          <td
+                            class="num mono"
+                            [class.is-pos]="log.deltaFromAvg > 0"
+                            [class.is-neg]="log.deltaFromAvg < 0"
+                          >
+                            {{ log.deltaFromAvg >= 0 ? '+' : '' }}{{ log.deltaFromAvg.toFixed(1) }}
+                          </td>
+                          <td class="num mono strong-num">{{ log.points.toFixed(2) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            } @else {
+              <div class="ch-mobile-feed mobile-sub-feed">
+                @for (peer of rep.peers; track peer.player.playerId) {
+                  <button
+                    type="button"
+                    class="ch-data-card ch-interactive"
+                    [class.is-highlighted]="peer.isCurrent"
+                    (click)="selectPlayer(peer.player.playerId)"
+                  >
+                    <div class="ch-row-between">
+                      <div>
+                        <span class="mono muted-cell">{{ peer.player.position }} #{{ peer.posRank }}</span>
+                        <div>
+                          <strong class="player-name">{{ peer.player.name }}</strong>
+                          <span class="muted-cell mono"> ({{ peer.player.nflTeam }})</span>
+                        </div>
+                        <span class="muted-cell">{{ peer.player.fantasyTeamName ?? 'Free Agent' }}</span>
+                      </div>
+                      <div class="dir-card-pts mono">
+                        <strong>{{ peer.player.avgPoints.toFixed(1) }} PPG</strong>
+                        <span>{{ peer.player.seasonPoints.toFixed(1) }} tot</span>
+                      </div>
+                    </div>
+                  </button>
+                }
+              </div>
+
+              <div class="ch-table-wrap ch-desktop-table">
+                <table class="ch-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Player</th>
+                      <th>Fantasy Owner</th>
+                      <th class="num">PPG</th>
+                      <th class="num">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (peer of rep.peers; track peer.player.playerId) {
+                      <tr
+                        class="is-clickable"
+                        [class.is-selected-row]="peer.isCurrent"
+                        (click)="selectPlayer(peer.player.playerId)"
+                      >
+                        <td class="mono">{{ peer.player.position }} #{{ peer.posRank }}</td>
+                        <td>
+                          <div class="ch-flex-row">
+                            <strong class="player-name">{{ peer.player.name }}</strong>
+                            <span class="muted-cell mono">{{ peer.player.nflTeam }}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="muted-cell">{{ peer.player.fantasyTeamName ?? 'Free Agent' }}</span>
+                        </td>
+                        <td class="num mono">{{ peer.player.avgPoints.toFixed(1) }}</td>
+                        <td class="num mono strong-num">{{ peer.player.seasonPoints.toFixed(1) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        } @else {
+          <section class="ch-card empty-players">
+            Select any player from the Player Pool to inspect full season and weekly telemetry.
+          </section>
+        }
+      </div>
+    </div>
+  </div>
+}

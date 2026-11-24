@@ -1,0 +1,447 @@
+<div class="ch-page ch-stack settings-page ch-enter">
+  <app-page-header
+    overline="Clubhouse Preferences"
+    title="Settings &amp; Leagues"
+    context="Customize color themes, pin your franchise, tune Watch Party alerts, and manage linked Sleeper leagues."
+    mobileContext="Themes, pinned team &amp; league connections"
+    [meta]="activeThemeDef().name"
+  />
+
+  <section class="status-ribbon" aria-label="Active configuration summary">
+    <div class="ch-card status-item">
+      <span class="ch-overline">Active Theme</span>
+      <div class="ch-row-between status-val-row">
+        <strong>{{ activeThemeDef().name }}</strong>
+        <button type="button" class="inline-jump" (click)="setSection('themes')">Change →</button>
+      </div>
+    </div>
+
+    <div class="ch-card status-item">
+      <span class="ch-overline">Pinned Franchise</span>
+      <div class="ch-row-between status-val-row">
+        @if (sleeper.myTeam(); as tm) {
+          <strong>{{ tm.teamName }}</strong>
+        } @else {
+          <span class="muted-text">Browse All Teams</span>
+        }
+        <button type="button" class="inline-jump" (click)="setSection('leagues')">Edit →</button>
+      </div>
+    </div>
+
+    <div class="ch-card status-item">
+      <span class="ch-overline">Connected League</span>
+      <div class="ch-row-between status-val-row">
+        @if (sleeper.league(); as lg) {
+          <strong>{{ lg.name }} · {{ lg.season }}</strong>
+        } @else {
+          <span class="muted-text">No League Connected</span>
+        }
+        <button type="button" class="inline-jump" (click)="setSection('leagues')">Manage →</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="settings-workspace">
+    <aside class="ch-card settings-nav" aria-label="Settings sections">
+      <span class="ch-overline nav-kicker">Categories</span>
+      <button
+        type="button"
+        class="nav-item"
+        [class.is-active]="activeSection() === 'all'"
+        (click)="setSection('all')"
+      >
+        <span>All Settings</span>
+        <span class="nav-sub">Complete view</span>
+      </button>
+      <button
+        type="button"
+        class="nav-item"
+        [class.is-active]="activeSection() === 'themes'"
+        (click)="setSection('themes')"
+      >
+        <span>Appearance</span>
+        <span class="nav-sub">Color themes</span>
+      </button>
+      <button
+        type="button"
+        class="nav-item"
+        [class.is-active]="activeSection() === 'leagues'"
+        (click)="setSection('leagues')"
+      >
+        <span>Team &amp; Leagues</span>
+        <span class="nav-sub">Identity &amp; IDs</span>
+      </button>
+      <button
+        type="button"
+        class="nav-item"
+        [class.is-active]="activeSection() === 'alerts'"
+        (click)="setSection('alerts')"
+      >
+        <span>Gameday Alerts</span>
+        <span class="nav-sub">Audio &amp; refresh</span>
+      </button>
+      <button
+        type="button"
+        class="nav-item"
+        [class.is-active]="activeSection() === 'display'"
+        (click)="setSection('display')"
+      >
+        <span>Display &amp; Cache</span>
+        <span class="nav-sub">Home &amp; storage</span>
+      </button>
+    </aside>
+
+    <div class="ch-stack settings-body">
+      @if (showSection('themes')) {
+        <section class="ch-card ch-stack section-card">
+          <div class="ch-row-between section-head">
+            <div>
+              <span class="ch-overline">01 · Appearance</span>
+              <h2 class="ch-section-title">Color Theme</h2>
+              <p class="section-desc">
+                Select a color palette for the entire Clubhouse. Changes apply immediately.
+              </p>
+            </div>
+
+            <label class="switch-row">
+              <span class="switch-text">Auto Match OS</span>
+              <span class="switch-wrap">
+                <input
+                  type="checkbox"
+                  aria-label="Follow OS light or dark mode"
+                  [checked]="settings.followSystemTheme()"
+                  (change)="onToggleSystemTheme($event)"
+                />
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+          </div>
+
+          <div class="theme-grid">
+            @for (theme of settings.themes; track theme.id) {
+              @let selected = activeThemeId() === theme.id;
+              <button
+                type="button"
+                class="theme-card"
+                [class.is-active-theme]="selected"
+                (click)="selectTheme(theme.id)"
+              >
+                <div class="theme-preview" [style.background]="theme.swatches.canvas" aria-hidden="true">
+                  <span class="preview-rail" [style.background]="theme.swatches.primary"></span>
+                  <div class="preview-surface" [style.background]="theme.swatches.surface">
+                    <span class="preview-bar-lg" [style.background]="theme.swatches.primary"></span>
+                    <span class="preview-bar-sm" [style.background]="theme.swatches.accent"></span>
+                  </div>
+                </div>
+
+                <div class="theme-meta">
+                  <div class="ch-row-between">
+                    <strong class="theme-name">{{ theme.name }}</strong>
+                    <span
+                      class="ch-chip mono"
+                      [class.is-jade]="selected"
+                      [class.is-neutral]="!selected"
+                    >
+                      {{ selected ? 'Active' : theme.mode === 'dark' ? 'Dark' : 'Light' }}
+                    </span>
+                  </div>
+                  <p class="theme-tagline">{{ theme.tagline }}</p>
+                </div>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      @if (showSection('leagues')) {
+        <section class="ch-card ch-stack section-card">
+          <div class="section-head">
+            <div>
+              <span class="ch-overline">02 · Identity &amp; Seasons</span>
+              <h2 class="ch-section-title">My Team &amp; Linked Leagues</h2>
+              <p class="section-desc">
+                Pin your team to highlight your matchup and waiver needs, or switch between saved leagues.
+              </p>
+            </div>
+          </div>
+
+          <div class="setting-rows">
+            <div class="setting-row">
+              <div class="setting-copy">
+                <span class="setting-title">Your Team in This League</span>
+                <span class="setting-hint">
+                  Personalizes Overview, Watch Party focus, Playoffs, and Waiver Fit recommendations.
+                </span>
+              </div>
+
+              <div class="setting-control picker-pair">
+                @if (sleeper.dashboard()) {
+                  <app-picker
+                    class="control-picker"
+                    [options]="myTeamOptions()"
+                    [value]="sleeper.myUserId() ?? ''"
+                    ariaLabel="Select your team in this league"
+                    sheetTitle="Pin Your Franchise"
+                    [searchable]="true"
+                    (valueChange)="selectMyTeam($event)"
+                  />
+                  @if (sleeper.myTeam()) {
+                    <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="clearMyTeam()">
+                      Clear
+                    </button>
+                  }
+                } @else {
+                  <span class="muted-text">Connect a league below first</span>
+                }
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-copy">
+                <label class="setting-title" for="add-league-id">Add League by Sleeper ID</label>
+                <span class="setting-hint">
+                  Find this in Sleeper under League → Settings → General → Copy League ID.
+                </span>
+              </div>
+
+              <div class="setting-control league-add-row">
+                <input
+                  id="add-league-id"
+                  class="ch-input control-input mono"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="Enter numeric League ID…"
+                  [ngModel]="newLeagueInput()"
+                  (ngModelChange)="newLeagueInput.set($event)"
+                />
+                <button
+                  type="button"
+                  class="ch-btn ch-btn-primary is-compact"
+                  [disabled]="!newLeagueInput().trim() || sleeper.loading()"
+                  (click)="connectLeagueById()"
+                >
+                  {{ sleeper.loading() ? 'Loading…' : 'Connect' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          @if (sleeper.seasons().length > 0) {
+            <div class="saved-block">
+              <div class="ch-row-between saved-header">
+                <span class="ch-overline">Saved Leagues &amp; Seasons ({{ sleeper.seasons().length }})</span>
+                @if (sleeper.dashboard()) {
+                  <button
+                    type="button"
+                    class="ch-btn ch-btn-ghost is-compact danger-txt"
+                    (click)="disconnectActive()"
+                  >
+                    Disconnect Active
+                  </button>
+                }
+              </div>
+
+              <div class="saved-table">
+                @for (s of sleeper.seasons(); track s.leagueId) {
+                  @let isActive = sleeper.league()?.league_id === s.leagueId;
+                  <div class="saved-row" [class.is-active-league]="isActive">
+                    <div class="saved-info">
+                      <span class="ch-chip mono" [class.is-jade]="isActive" [class.is-neutral]="!isActive">
+                        {{ s.season }}
+                      </span>
+                      <div class="saved-names">
+                        <strong>{{ s.name }}</strong>
+                        <span class="mono saved-id">ID {{ s.leagueId }}</span>
+                      </div>
+                    </div>
+
+                    <div class="ch-flex-row saved-actions">
+                      @if (isActive) {
+                        <span class="ch-chip is-jade">Active</span>
+                      } @else {
+                        <button
+                          type="button"
+                          class="ch-btn ch-btn-secondary is-compact"
+                          (click)="switchLeague(s.leagueId)"
+                        >
+                          Switch
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="ch-btn ch-btn-ghost is-compact"
+                        (click)="removeLeague(s.leagueId)"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </section>
+      }
+
+      @if (showSection('alerts')) {
+        <section class="ch-card ch-stack section-card">
+          <div class="section-head">
+            <div>
+              <span class="ch-overline">03 · Gameday Live</span>
+              <h2 class="ch-section-title">Watch Party &amp; Alerts</h2>
+              <p class="section-desc">
+                Control live scoring alerts, sound notifications, and refresh frequency on Sundays.
+              </p>
+            </div>
+          </div>
+
+          <div class="setting-rows">
+            <label class="setting-row is-interactive">
+              <div class="setting-copy">
+                <span class="setting-title">Live Scoring Alert Banners</span>
+                <span class="setting-hint">Pop up banners for touchdowns, 12+ yd gains, and red-zone drives.</span>
+              </div>
+              <span class="switch-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="settings.watchPartyAlerts()"
+                  (change)="settings.setWatchPartyAlerts($any($event.target).checked)"
+                />
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+
+            <div class="setting-row">
+              <div class="setting-copy">
+                <span class="setting-title">Touchdown Audio Chime</span>
+                <span class="setting-hint">Play a subtle two-tone chime when new Watch Party alerts trigger.</span>
+              </div>
+              <div class="ch-flex-row">
+                <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="testAlertChime()">
+                  Test Sound
+                </button>
+                <span class="switch-wrap">
+                  <input
+                    type="checkbox"
+                    aria-label="Enable touchdown audio chime"
+                    [checked]="settings.watchPartySound()"
+                    (change)="settings.setWatchPartySound($any($event.target).checked)"
+                  />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-copy">
+                <span class="setting-title">Live Polling Interval</span>
+                <span class="setting-hint">How often Watch Party fetches live ESPN &amp; Sleeper updates.</span>
+              </div>
+              <div class="ch-segmented" role="tablist" aria-label="Watch party refresh interval">
+                @for (sec of refreshChoices; track sec) {
+                  <button
+                    type="button"
+                    class="ch-segment mono"
+                    [class.is-active]="settings.watchPartyIntervalSec() === sec"
+                    (click)="settings.setWatchPartyIntervalSec(sec)"
+                  >
+                    {{ sec }}s
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (showSection('display')) {
+        <section class="ch-card ch-stack section-card">
+          <div class="section-head">
+            <div>
+              <span class="ch-overline">04 · Interface &amp; Cache</span>
+              <h2 class="ch-section-title">Display &amp; Storage</h2>
+              <p class="section-desc">
+                Adjust landing navigation, layout spacing, animations, and local player directory cache.
+              </p>
+            </div>
+          </div>
+
+          <div class="setting-rows">
+            <div class="setting-row">
+              <div class="setting-copy">
+                <span class="setting-title">Default Landing Page</span>
+                <span class="setting-hint">Where Clubhouse opens first when visiting `/`.</span>
+              </div>
+              <div class="setting-control">
+                <app-picker
+                  class="control-picker"
+                  [options]="routeOptions"
+                  [value]="settings.defaultRoute()"
+                  ariaLabel="Default landing page"
+                  sheetTitle="Default Starting Page"
+                  (valueChange)="selectDefaultRoute($event)"
+                />
+              </div>
+            </div>
+
+            <label class="setting-row is-interactive">
+              <div class="setting-copy">
+                <span class="setting-title">Compact Layout Density</span>
+                <span class="setting-hint">Tighter card padding and table spacing for wide desktop monitors.</span>
+              </div>
+              <span class="switch-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="settings.compactDensity()"
+                  (change)="settings.setCompactDensity($any($event.target).checked)"
+                />
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+
+            <label class="setting-row is-interactive">
+              <div class="setting-copy">
+                <span class="setting-title">Reduce Animations &amp; Motion</span>
+                <span class="setting-hint">Disables entrance transitions and live pulsing indicators.</span>
+              </div>
+              <span class="switch-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="settings.reduceMotion()"
+                  (change)="settings.setReduceMotion($any($event.target).checked)"
+                />
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+
+            <div class="setting-row">
+              <div class="setting-copy">
+                <span class="setting-title">Player Cache &amp; Preferences</span>
+                <span class="setting-hint">
+                  Force a fresh download of Sleeper player metadata or restore default settings.
+                </span>
+              </div>
+              <div class="ch-flex-row cache-actions">
+                <button
+                  type="button"
+                  class="ch-btn ch-btn-secondary is-compact"
+                  [disabled]="clearingCache() || !sleeper.dashboard()"
+                  (click)="resetPlayerCache()"
+                >
+                  {{ clearingCache() ? 'Syncing…' : 'Refresh Player Cache' }}
+                </button>
+                <button
+                  type="button"
+                  class="ch-btn ch-btn-ghost is-compact danger-txt"
+                  (click)="resetPreferences()"
+                >
+                  Reset Preferences
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</div>

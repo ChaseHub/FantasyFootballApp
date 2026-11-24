@@ -1,0 +1,91 @@
+<section class="ch-card chart-panel">
+  <div class="chart-head">
+    <div>
+      <span class="ch-overline">Points Trend</span>
+      <h2 class="ch-section-title">Weekly Output vs League Average</h2>
+    </div>
+
+    @if (focusedScore(); as focus) {
+      <div class="ch-well focus-pill mono">
+        <span>Wk {{ focus.week }}</span>
+        <span class="sep">·</span>
+        <span class="pts">{{ focus.points.toFixed(2) }} pts</span>
+        @if (focus.opponentPoints !== null) {
+          <span class="sep">·</span>
+          <span>vs {{ focus.opponentPoints.toFixed(2) }} ({{ focus.result }})</span>
+        }
+        <span class="sep">·</span>
+        <span>Avg {{ focus.leagueAverage.toFixed(2) }}</span>
+      </div>
+    }
+  </div>
+
+  @if (scores().length === 0) {
+    <div class="ch-well empty-chart">No weekly matchup data scored yet.</div>
+  } @else {
+    <div class="svg-wrap">
+      <svg
+        [attr.viewBox]="'0 0 ' + viewWidth + ' ' + viewHeight"
+        role="img"
+        [attr.aria-label]="teamName() + ' weekly points chart'"
+      >
+        @for (tick of gridTicks(); track tick.value) {
+          <line
+            class="ref-line"
+            x1="42"
+            [attr.x2]="viewWidth - 18"
+            [attr.y1]="tick.y"
+            [attr.y2]="tick.y"
+          />
+          <text class="axis-text" x="34" [attr.y]="tick.y + 4" text-anchor="end">
+            {{ tick.value }}
+          </text>
+        }
+
+        @for (bar of bars(); track bar.week) {
+          <g
+            class="bar-item"
+            tabindex="0"
+            [class.is-win]="bar.score.result === 'W'"
+            [class.is-loss]="bar.score.result === 'L'"
+            [class.is-focused]="focusedScore()?.week === bar.week"
+            (click)="selectWeek(bar.week)"
+            (keydown.enter)="selectWeek(bar.week)"
+          >
+            <rect
+              class="bar-rect"
+              [attr.x]="bar.x"
+              [attr.y]="bar.y"
+              [attr.width]="bar.width"
+              [attr.height]="bar.height"
+              rx="4"
+            />
+            <text
+              class="week-text"
+              [attr.x]="bar.x + bar.width / 2"
+              [attr.y]="viewHeight - 10"
+              text-anchor="middle"
+            >
+              W{{ bar.week }}
+            </text>
+          </g>
+        }
+
+        @if (bars().length > 1) {
+          <polyline class="avg-line" [attr.points]="avgPolyline()" fill="none" />
+        }
+
+        @for (bar of bars(); track bar.week) {
+          <circle class="avg-dot" [attr.cx]="bar.x + bar.width / 2" [attr.cy]="bar.avgY" r="3" />
+        }
+      </svg>
+    </div>
+
+    <div class="legend-row">
+      <span class="legend-item"><span class="swatch win"></span>Win</span>
+      <span class="legend-item"><span class="swatch loss"></span>Loss / Other</span>
+      <span class="legend-item"><span class="swatch avg"></span>League Average</span>
+      <span class="legend-hint">Select a bar to inspect that week’s lineup</span>
+    </div>
+  }
+</section>

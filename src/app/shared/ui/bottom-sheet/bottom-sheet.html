@@ -1,0 +1,42 @@
+@if (open()) {
+  <div
+    class="sheet-backdrop"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="title() || 'Panel'"
+    (click)="onBackdropClick()"
+  >
+    <div class="sheet-panel" [style]="sheetStyle()" (click)="$event.stopPropagation()">
+      <div class="sheet-handle-row" aria-hidden="true">
+        <span class="sheet-handle"></span>
+      </div>
+
+      @if (title() || showClose()) {
+        <header class="sheet-header">
+          <div class="sheet-title-group">
+            @if (title()) {
+              <h2 class="sheet-title">{{ title() }}</h2>
+            }
+            @if (subtitle()) {
+              <p class="sheet-sub">{{ subtitle() }}</p>
+            }
+          </div>
+          @if (showClose()) {
+            <button
+              type="button"
+              class="ch-btn ch-btn-ghost sheet-close-btn"
+              aria-label="Close panel"
+              (click)="closed.emit()"
+            >
+              ✕
+            </button>
+          }
+        </header>
+      }
+
+      <div class="sheet-body">
+        <ng-content />
+      </div>
+    </div>
+  </div>
+}

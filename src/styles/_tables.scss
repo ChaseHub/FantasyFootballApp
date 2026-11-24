@@ -1,0 +1,170 @@
+@use 'mixins' as *;
+
+@layer tables {
+  .ch-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ch-sticky-scroll {
+    max-height: 520px;
+    overflow-y: auto;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--surface-soft);
+    }
+  }
+
+  .ch-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      padding: 10px var(--space-3);
+      background: var(--surface-soft);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      white-space: nowrap;
+
+      @include mq(md) {
+        padding: var(--space-3) var(--space-4);
+      }
+
+      &.num {
+        text-align: right;
+      }
+    }
+
+    td {
+      height: 50px;
+      padding: 10px var(--space-3);
+      border-bottom: 1px solid var(--border);
+      font-size: 13.5px;
+      color: var(--ink);
+      vertical-align: middle;
+
+      @include mq(md) {
+        height: 52px;
+        padding: 10px var(--space-4);
+        font-size: 14px;
+      }
+
+      &.num {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        font-weight: 500;
+
+        @include mq(md) {
+          font-size: 13.5px;
+        }
+      }
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr.is-clickable {
+      cursor: pointer;
+      transition: background 120ms ease;
+
+      &:hover {
+        background: var(--surface-soft);
+      }
+    }
+
+    .ch-sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--surface);
+      box-shadow: 1px 0 0 var(--border);
+      max-width: 148px;
+
+      @include mq(md) {
+        max-width: none;
+      }
+    }
+
+    thead th.ch-sticky-col {
+      z-index: 3;
+      background: var(--surface-soft);
+    }
+  }
+
+  /* Reusable Mobile Card Feed Pattern replacing dense tables on phones */
+  .ch-mobile-feed {
+    @include stack(var(--space-2));
+
+    @include mq(md) {
+      display: none;
+    }
+  }
+
+  .ch-desktop-table {
+    display: none;
+
+    @include mq(md) {
+      display: block;
+    }
+  }
+
+  .ch-data-card {
+    @include stack(var(--space-2));
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    text-align: left;
+
+    &.is-highlighted {
+      border-color: var(--jade);
+      background: var(--jade-soft);
+    }
+
+    &.is-interactive {
+      cursor: pointer;
+
+      &:active {
+        transform: scale(0.99);
+      }
+    }
+  }
+
+  .ch-data-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .ch-data-metric {
+    @include stack(2px);
+    min-width: 0;
+  }
+
+  .ch-data-metric-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .ch-data-metric-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+}

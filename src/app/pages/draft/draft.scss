@@ -1,0 +1,443 @@
+@use 'mixins' as *;
+
+.draft-page {
+  gap: var(--page-gap);
+}
+
+.pre-draft-card {
+  gap: var(--space-3);
+}
+
+.pre-draft-copy {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--on-graphite-muted);
+  max-width: 60ch;
+}
+
+.pre-draft-actions {
+  padding-top: var(--space-1);
+}
+
+.draft-hero {
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.hero-title {
+  margin: var(--space-1) 0 0;
+  font-size: clamp(20px, 2.2vw, 24px);
+  color: var(--on-graphite);
+}
+
+.hero-tiles {
+  @include scroll-rail(10px);
+  scroll-snap-type: x mandatory;
+
+  > * {
+    flex: 0 0 min(74%, 240px);
+    scroll-snap-align: start;
+  }
+
+  @include mq(md) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+
+.hero-tile {
+  @include stack(var(--space-1));
+}
+
+.tile-main {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-graphite);
+  @include truncate;
+
+  &.is-signal {
+    color: var(--signal);
+  }
+}
+
+.mix-card {
+  gap: var(--space-3);
+}
+
+.mix-hint {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.mix-bar {
+  height: 10px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  display: flex;
+  gap: 2px;
+  background: var(--surface-recessed);
+}
+
+.mix-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mix-item {
+  @include row(7px, center);
+  min-height: 36px;
+  padding: 5px 8px;
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-soft);
+  }
+
+  &.is-active-pos {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+}
+
+.mix-pos,
+.player-name,
+.team-name,
+.strong-num {
+  font-weight: 600;
+}
+
+.mix-count,
+.muted-txt {
+  color: var(--ink-secondary);
+}
+
+.filter-btn {
+  border: 0;
+  cursor: pointer;
+}
+
+.reset-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.board-card {
+  padding: var(--space-3);
+  gap: 12px;
+
+  @include mq(md) {
+    padding: var(--space-4) 18px;
+    gap: 14px;
+  }
+}
+
+.pick-inspector {
+  @include row(10px, center, space-between, wrap);
+  padding: 10px 14px;
+  border-color: var(--jade);
+}
+
+.pts-txt,
+.pick-pts,
+.team-link,
+.recap-pts {
+  font-weight: 700;
+  color: var(--jade);
+}
+
+/* Mobile Accordion Round Feed */
+.mobile-rounds {
+  gap: var(--space-2);
+}
+
+.round-accordion {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.round-summary {
+  list-style: none;
+  @include row(8px, center, space-between);
+  min-height: 46px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.round-sum-left {
+  @include row(8px, center);
+}
+
+.round-mobile-picks {
+  @include stack(6px);
+  padding: 0 10px 10px;
+}
+
+.mobile-pick-row {
+  @include row(8px, center, space-between);
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+
+  &.is-selected {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+}
+
+.pick-row-left {
+  @include row(8px, center);
+  min-width: 0;
+  flex: 1;
+}
+
+.pick-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  min-width: 34px;
+}
+
+.pick-row-copy {
+  @include stack(1px);
+  min-width: 0;
+
+  strong {
+    font-size: 13.5px;
+    @include truncate;
+  }
+
+  span {
+    font-size: 11px;
+    color: var(--ink-muted);
+    @include truncate;
+  }
+}
+
+.mobile-pick-feed {
+  padding: 12px;
+}
+
+/* Desktop Full Board Grid */
+.board-scroll {
+  @include stack(7px);
+  overflow: auto;
+  max-height: 680px;
+  padding-bottom: var(--space-1);
+}
+
+.round-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-width: 960px;
+}
+
+.col-headers {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface);
+  padding-bottom: var(--space-1);
+  display: grid;
+  grid-template-columns: 44px repeat(var(--col-count, 8), minmax(108px, 1fr));
+  gap: var(--space-2);
+  min-width: 960px;
+}
+
+.corner-cell,
+.round-badge {
+  border-radius: var(--r-xs);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.corner-cell {
+  display: grid;
+  place-items: center;
+}
+
+.round-badge {
+  width: 44px;
+  flex-shrink: 0;
+  @include stack(0);
+  align-items: center;
+  justify-content: center;
+}
+
+.col-header {
+  @include row(var(--space-2), center);
+  padding: var(--space-2);
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+
+  &:hover,
+  &.is-active-col {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+}
+
+.col-meta {
+  min-width: 0;
+}
+
+.col-slot,
+.dir-arrow,
+.team-mgr,
+.nfl-team,
+.muted {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.nfl-team,
+.muted {
+  margin-left: 6px;
+}
+
+.col-team,
+.pick-player,
+.line-name {
+  font-size: 12px;
+  font-weight: 700;
+  @include truncate;
+}
+
+.round-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--col-count, 8), minmax(108px, 1fr));
+  gap: var(--space-2);
+}
+
+.ch-pick-cell {
+  @include stack(3px);
+  padding: var(--space-2) 9px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink-muted);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 140ms ease;
+
+  &[data-pos='QB'] {
+    border-left-color: var(--pos-qb);
+    background: var(--pos-qb-bg);
+  }
+
+  &[data-pos='RB'] {
+    border-left-color: var(--pos-rb);
+    background: var(--pos-rb-bg);
+  }
+
+  &[data-pos='WR'] {
+    border-left-color: var(--pos-wr);
+    background: var(--pos-wr-bg);
+  }
+
+  &[data-pos='TE'] {
+    border-left-color: var(--pos-te);
+    background: var(--pos-te-bg);
+  }
+
+  &.is-dimmed {
+    opacity: 0.25;
+  }
+
+  &.is-selected {
+    outline: 2px solid var(--jade);
+    outline-offset: -1px;
+  }
+
+  &.is-empty {
+    cursor: default;
+    place-items: center;
+    border-left-width: 1px;
+    color: var(--ink-muted);
+  }
+}
+
+.pick-top,
+.pick-bottom {
+  @include row(4px, center, space-between);
+  font-size: 10.5px;
+  color: var(--ink-muted);
+}
+
+.list-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.recap-card {
+  gap: 11px;
+
+  &.is-my-recap {
+    border-color: var(--jade);
+    box-shadow: inset 0 0 0 1px var(--jade);
+  }
+}
+
+.recap-team {
+  @include row(9px, center);
+}
+
+.recap-split {
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+}
+
+.top-pick-well {
+  gap: var(--space-1);
+  padding: 9px 11px;
+}
+
+.top-pick-row {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.recap-picks {
+  gap: 5px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.recap-line {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12.5px;
+}
+
+@include mq('2xl') {
+  .recap-card.span-4 {
+    grid-column: span 3;
+  }
+}

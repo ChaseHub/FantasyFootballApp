@@ -1,0 +1,283 @@
+@use 'mixins' as *;
+
+.history-page {
+  gap: var(--page-gap);
+}
+
+.header-controls {
+  flex-wrap: wrap;
+  width: 100%;
+
+  @include mq(md) {
+    width: auto;
+  }
+}
+
+.history-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.history-hero {
+  gap: var(--space-4);
+}
+
+.hero-head {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hero-title {
+  margin: var(--space-1) 0 0;
+  font-size: clamp(19px, 2.2vw, 24px);
+  color: var(--on-graphite);
+}
+
+.hero-rail {
+  @include mq-only-mobile {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 78%);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: var(--space-2);
+    padding-bottom: 2px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    > .ch-feature-tile {
+      scroll-snap-align: start;
+    }
+  }
+}
+
+.tile-name {
+  font-size: 16px;
+  @include truncate;
+}
+
+.ch-team-hero-sub.is-signal,
+.ch-team-hero-val.is-signal {
+  color: var(--signal);
+}
+
+.hall-card,
+.records-card,
+.spotlight-rivalry,
+.rivalry-wrap {
+  gap: var(--space-3-5);
+}
+
+.champ-list,
+.record-list {
+  gap: var(--space-2-5);
+}
+
+.champ-row,
+.record-tile {
+  gap: var(--space-1-5);
+  padding: var(--space-3);
+
+  @include mq(md) {
+    padding: var(--space-3) 14px;
+  }
+}
+
+.champ-top {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.champ-id {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.champ-team {
+  font-size: 15px;
+}
+
+.champ-meta {
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.rec-stat {
+  font-size: 20px;
+  color: var(--jade);
+}
+
+.rec-holder {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rec-ctx,
+.mgr-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.table-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: var(--space-3-5) var(--space-4) var(--space-2-5);
+
+  @include mq(md) {
+    padding: 18px 22px var(--space-3);
+  }
+}
+
+.mobile-careers-feed,
+.mobile-h2h-feed {
+  padding: 0 var(--space-3-5) var(--space-4);
+}
+
+.rank-pill {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  min-width: 24px;
+}
+
+.card-id {
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.id-meta {
+  gap: 1px;
+  min-width: 0;
+}
+
+.card-name {
+  font-size: 14px;
+  @include truncate;
+}
+
+.h2h-mobile-card {
+  width: 100%;
+  text-align: left;
+  min-height: 54px;
+}
+
+.careers-table {
+  min-width: 720px;
+}
+
+.strong-num {
+  font-weight: 700;
+}
+
+.muted-txt {
+  color: var(--ink-muted);
+  font-size: 12.5px;
+}
+
+.rivalry-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+
+  @include mq(md) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.selector-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+
+  @include mq(md) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+}
+
+.mgr-picker {
+  min-width: 0;
+
+  @include mq(md) {
+    min-width: 205px;
+  }
+}
+
+.swap-btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+.rivalry-big {
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.rivalry-last {
+  font-size: 15px;
+  color: var(--jade);
+}
+
+.matrix-table {
+  min-width: 720px;
+
+  .center-col {
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}
+
+.h2h-cell {
+  cursor: pointer;
+
+  &.is-self {
+    background: var(--surface-recessed);
+    color: var(--ink-muted);
+    cursor: default;
+  }
+
+  &.is-win {
+    background: var(--positive-soft);
+    color: var(--positive);
+    font-weight: 700;
+  }
+
+  &.is-loss {
+    background: var(--negative-soft);
+    color: var(--negative);
+  }
+}
+
+.empty-box {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+}

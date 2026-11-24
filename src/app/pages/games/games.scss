@@ -1,0 +1,427 @@
+@use 'mixins' as *;
+
+.games-page {
+  gap: var(--page-gap);
+}
+
+.slate-section,
+.game-hero,
+.detail-card,
+.stat-bars,
+.leaders-list,
+.play-main,
+.team-meta,
+.watch-meta,
+.hero-divider,
+.drive-well,
+.watch-group,
+.bar-item,
+.slate-block {
+  @include stack(var(--space-2));
+}
+
+.slate-toolbar,
+.hero-top,
+.sit-top,
+.game-top,
+.game-row,
+.game-foot,
+.card-head {
+  @include row(var(--space-2), center, space-between);
+}
+
+.slate-toolbar,
+.card-head,
+.play-top-row,
+.fantasy-hits {
+  flex-wrap: wrap;
+}
+
+/* Top Scoreboard Rail (Snap Scroll on Phones) */
+.slate-rail {
+  @include scroll-rail(12px);
+  padding: 2px 2px 6px;
+}
+
+.slate-block {
+  gap: var(--space-2);
+  flex-shrink: 0;
+
+  & + .slate-block {
+    border-left: 2px solid var(--border);
+    padding-left: 12px;
+  }
+}
+
+.slate-block-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.slate-cards-row {
+  display: flex;
+  gap: 8px;
+}
+
+.game-card {
+  width: 192px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  padding: 10px 12px;
+  gap: 6px;
+  text-align: left;
+
+  @include mq(md) {
+    width: 220px;
+  }
+
+  &.is-selected {
+    border-color: var(--jade);
+    background: var(--surface-soft);
+    box-shadow: 0 0 0 1px var(--jade), var(--shadow-card);
+  }
+}
+
+.nfl-logo.lg {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+
+  @include mq(md) {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.nfl-logo.sm,
+.play-nfl-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.game-row {
+  color: var(--ink-secondary);
+
+  &.is-leading {
+    color: var(--ink);
+
+    .row-score {
+      color: var(--positive);
+      font-weight: 700;
+    }
+  }
+}
+
+.row-left,
+.team-side,
+.watch-pill,
+.play-top-row,
+.fantasy-hits,
+.team-key {
+  @include row(7px, center);
+  min-width: 0;
+}
+
+.row-score {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.game-foot {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  color: var(--ink-muted);
+}
+
+.starter-tag,
+.watch-pts,
+.ld-stat {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--jade);
+}
+
+/* Featured Game Box Hero (Mobile-first stacked -> 3-col via @container) */
+.skeleton-hero,
+.game-hero {
+  gap: var(--space-3);
+
+  @include mq(md) {
+    gap: var(--space-4);
+  }
+}
+
+.scoreboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+
+  @include cq(720px) {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+
+.team-side {
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--on-graphite-tint-subtle);
+
+  @include cq(720px) {
+    background: transparent;
+    padding: 0;
+
+    &.is-home {
+      flex-direction: row-reverse;
+
+      .team-meta {
+        text-align: right;
+        align-items: flex-end;
+      }
+    }
+  }
+}
+
+.team-meta,
+.watch-meta,
+.play-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-title {
+  @include row(6px, center);
+  font-size: clamp(15px, 2vw, 17px);
+  font-weight: 700;
+}
+
+.team-title,
+.last-play,
+.hero-score {
+  color: var(--on-graphite);
+}
+
+.pos-dot,
+.key-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+}
+
+.pos-dot {
+  background: var(--signal);
+}
+
+.key-dot.is-away {
+  background: var(--pos-wr);
+}
+
+.key-dot.is-home {
+  background: var(--jade);
+}
+
+.team-rec,
+.odds-sub,
+.sit-clock,
+.vs-label {
+  font-size: 11.5px;
+  color: var(--on-graphite-muted);
+}
+
+.hero-score {
+  font-size: clamp(28px, 3.6vw, 46px);
+  flex-shrink: 0;
+
+  &.is-signal {
+    color: var(--signal);
+  }
+}
+
+.hero-divider {
+  @include row(8px, center, flex-start);
+
+  @include cq(720px) {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+}
+
+.sit-down {
+  font-weight: 700;
+  color: var(--signal);
+  font-size: 12.5px;
+}
+
+.last-play,
+.play-text,
+.drive-desc,
+.empty-note {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+/* Quarter Linescore */
+.ch-linescore-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--on-graphite-border);
+  padding-top: 10px;
+}
+
+.ch-linescore {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  color: var(--on-graphite-muted);
+
+  th,
+  td {
+    padding: var(--space-1) var(--space-2);
+    text-align: center;
+
+    &:first-child {
+      text-align: left;
+      padding-left: 0;
+      font-weight: 700;
+      color: var(--on-graphite);
+    }
+  }
+
+  .tot {
+    font-weight: 700;
+    color: var(--signal);
+  }
+}
+
+.play-card {
+  height: 100%;
+}
+
+.games-feed {
+  min-height: 280px;
+  max-height: 440px;
+
+  @include mq(lg) {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 460px;
+    max-height: none;
+  }
+}
+
+.play-clock,
+.toolbar-hint,
+.row-rec,
+.game-status,
+.watch-sub,
+.bars-head,
+.ld-cat,
+.slate-block-count {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.hit-team {
+  font-weight: 600;
+}
+
+.ch-yd-chip {
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.ch-hit-chip {
+  @include row(5px, center);
+  padding: 3px var(--space-2) 3px var(--space-1);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--jade);
+  background: var(--surface);
+  font-size: 11px;
+
+  &.is-mine {
+    background: var(--jade-soft);
+  }
+
+  &.is-neg {
+    border-color: var(--negative);
+
+    .ch-hit-pts {
+      color: var(--negative);
+    }
+  }
+}
+
+.ch-hit-pts {
+  font-weight: 700;
+  color: var(--positive);
+}
+
+.bar-item {
+  font-size: 12px;
+}
+
+.ch-leader-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: var(--space-2) 10px;
+  border-radius: var(--r-xs);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.ld-stat {
+  grid-row: span 2;
+  align-self: center;
+}
+
+.fantasy-watch-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+
+  @include mq(sm) {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+}
+
+.watch-pill {
+  padding: 10px var(--space-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+
+  &.is-mine {
+    border-color: var(--jade);
+    background: var(--jade-soft);
+  }
+
+  &.is-bench {
+    opacity: 0.82;
+  }
+}
+
+.watch-name,
+.row-abbr {
+  font-size: 13px;
+  font-weight: 700;
+  @include truncate;
+}
+
+.watch-divider {
+  border: 0;
+  border-top: 2px solid var(--border);
+  margin: 2px 0;
+}

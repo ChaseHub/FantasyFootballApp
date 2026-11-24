@@ -1,0 +1,160 @@
+@use 'mixins' as *;
+
+.overview-page {
+  gap: var(--page-gap);
+}
+
+.pre-draft-hero {
+  gap: 14px;
+}
+
+.pre-draft-head {
+  flex-wrap: wrap;
+}
+
+.pre-draft-title {
+  margin: var(--space-1) 0 0;
+  color: var(--on-graphite);
+}
+
+.pre-draft-copy {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--on-graphite-muted);
+  max-width: 66ch;
+}
+
+.draft-order-strip {
+  @include scroll-rail(var(--space-2));
+
+  @include mq(md) {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+.draft-slot-pill {
+  flex-shrink: 0;
+  @include row(6px, center);
+  min-height: 36px;
+  padding: 5px 10px;
+  border-radius: var(--r-xs);
+  background: var(--on-graphite-tint);
+  border: 1px solid var(--on-graphite-border);
+  font-size: 12px;
+  color: var(--on-graphite);
+
+  &:hover {
+    background: var(--graphite-hover);
+    border-color: var(--signal-border);
+  }
+}
+
+.draft-slot-num {
+  color: var(--signal);
+  font-weight: 700;
+}
+
+.season-final-banner {
+  padding: 14px 18px;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  border-color: var(--brass);
+}
+
+.season-champ-name {
+  font-size: 15px;
+}
+
+.season-champ-meta {
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+}
+
+.strip-card {
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.strip-title {
+  font-size: 15.5px;
+  color: var(--ink);
+  @include truncate;
+}
+
+.strip-sub {
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+  @include truncate;
+}
+
+.right-col {
+  gap: var(--grid-gap);
+}
+
+.slate-card {
+  gap: var(--space-3);
+}
+
+.slate-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jade);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.slate-empty {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+.slate-list {
+  gap: var(--space-2);
+}
+
+.slate-row {
+  gap: var(--space-1);
+  padding: 10px var(--space-3);
+
+  &:hover {
+    border-color: var(--jade);
+  }
+}
+
+.slate-side {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 0;
+  @include truncate;
+
+  &.is-win {
+    font-weight: 700;
+    color: var(--ink);
+  }
+}
+
+.slate-pts {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+
+  &.is-win {
+    color: var(--jade);
+    font-weight: 700;
+  }
+}
+
+.slate-bye {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.skeleton-feature {
+  min-height: 200px;
+  @include stack(18px);
+  justify-content: space-between;
+}

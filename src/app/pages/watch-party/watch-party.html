@@ -1,0 +1,607 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack wp-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 190px; height: 32px;"></span>
+      <span class="ch-skeleton" style="width: 240px; height: 34px;"></span>
+    </header>
+    <div class="ch-bento">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="ch-card span-4"><span class="ch-skeleton" style="height: 76px;"></span></div>
+      }
+    </div>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack wp-page ch-enter">
+    <app-page-header
+      [overline]="'Live Sunday Broadcast · Week ' + week()"
+      title="Watch Party"
+      [context]="'Week ' + week() + ' · ' + data.league.name"
+      [mobileContext]="data.league.name + ' · Week ' + week()"
+      [meta]="'Synced ' + data.loadedAtTime"
+    >
+      <a class="ch-btn ch-btn-ghost is-compact ch-desktop-only" routerLink="/matchups">Slate →</a>
+      <a class="ch-btn ch-btn-ghost is-compact ch-desktop-only" routerLink="/games">NFL Games →</a>
+
+      <button
+        type="button"
+        class="ch-btn is-compact ch-mobile-only"
+        [class.ch-btn-primary]="alertsEnabled()"
+        [class.ch-btn-secondary]="!alertsEnabled()"
+        (click)="broadcastSheetOpen.set(true)"
+      >
+        Broadcast ▾
+      </button>
+
+      <div class="wp-desktop-controls ch-desktop-flex">
+        <button
+          type="button"
+          class="ch-btn is-compact"
+          [class.ch-btn-primary]="alertsEnabled()"
+          [class.ch-btn-secondary]="!alertsEnabled()"
+          [attr.aria-pressed]="alertsEnabled()"
+          (click)="toggleAlerts()"
+        >
+          <span>{{ alertsEnabled() ? 'Alerts On' : 'Alerts Muted' }}</span>
+        </button>
+
+        @if (alertsEnabled()) {
+          <button
+            type="button"
+            class="ch-btn ch-btn-secondary is-compact"
+            [attr.aria-pressed]="soundEnabled()"
+            (click)="toggleSound()"
+          >
+            <span>{{ soundEnabled() ? 'Chime On' : 'Chime Off' }}</span>
+          </button>
+
+          <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="triggerTestAlert()">
+            <span>Test Alert</span>
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="ch-btn is-compact auto-pill"
+        [class.ch-btn-primary]="autoRefreshEnabled()"
+        [class.ch-btn-secondary]="!autoRefreshEnabled()"
+        (click)="toggleAutoRefresh()"
+      >
+        @if (autoRefreshEnabled()) {
+          <span class="pulse-dot" aria-hidden="true"></span>
+          <span class="mono">{{ countdown() }}s</span>
+        } @else {
+          <span class="mono">Paused</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="ch-btn ch-btn-secondary is-compact ch-refresh-btn"
+        [disabled]="syncing()"
+        (click)="syncNow()"
+      >
+        <span class="ch-refresh-glyph" [class.is-spinning]="syncing()" aria-hidden="true">↻</span>
+        <span>{{ syncing() ? 'Sync...' : 'Sync' }}</span>
+      </button>
+    </app-page-header>
+
+    <app-bottom-sheet
+      [open]="broadcastSheetOpen()"
+      title="Live Broadcast Controls"
+      subtitle="Configure Sunday play alerts, audio chimes & navigation"
+      (closed)="broadcastSheetOpen.set(false)"
+    >
+      <div class="broadcast-sheet-body">
+        <button
+          type="button"
+          class="ch-btn"
+          [class.ch-btn-primary]="alertsEnabled()"
+          [class.ch-btn-secondary]="!alertsEnabled()"
+          (click)="toggleAlerts()"
+        >
+          {{ alertsEnabled() ? 'Alerts: Enabled' : 'Alerts: Muted' }}
+        </button>
+
+        @if (alertsEnabled()) {
+          <button
+            type="button"
+            class="ch-btn"
+            [class.ch-btn-primary]="soundEnabled()"
+            [class.ch-btn-secondary]="!soundEnabled()"
+            (click)="toggleSound()"
+          >
+            {{ soundEnabled() ? 'Chime Sound: On' : 'Chime Sound: Off' }}
+          </button>
+
+          <button
+            type="button"
+            class="ch-btn ch-btn-secondary"
+            (click)="triggerTestAlert(); broadcastSheetOpen.set(false)"
+          >
+            Trigger Test Alert
+          </button>
+        }
+
+        <div class="sheet-nav-links">
+          <a class="ch-btn ch-btn-ghost" routerLink="/matchups" (click)="broadcastSheetOpen.set(false)">
+            Full Matchups Slate →
+          </a>
+          <a class="ch-btn ch-btn-ghost" routerLink="/games" (click)="broadcastSheetOpen.set(false)">
+            NFL Scoreboard →
+          </a>
+        </div>
+      </div>
+    </app-bottom-sheet>
+
+    @if (activeAlerts().length > 0) {
+      <section class="ch-wp-alerts" aria-live="polite" aria-label="Watch Party Live Alerts">
+        @for (alert of activeAlerts(); track alert.id) {
+          <article class="ch-wp-alert-card" [attr.data-kind]="alert.kind">
+            <span class="ch-wp-alert-badge mono" [attr.data-kind]="alert.kind">
+              {{ alert.kind }}
+            </span>
+            <div class="ch-wp-alert-body">
+              <strong class="ch-wp-alert-title">{{ alert.title }}</strong>
+              <span class="ch-wp-alert-detail">{{ alert.detail }}</span>
+            </div>
+            @if (alert.pointsDelta !== null) {
+              <span class="ch-wp-alert-pts mono">
+                {{ alert.pointsDelta > 0 ? '+' : '' }}{{ alert.pointsDelta.toFixed(2) }}p
+              </span>
+            }
+            <button
+              type="button"
+              class="ch-wp-alert-close"
+              aria-label="Dismiss alert"
+              (click)="dismissAlert(alert.id)"
+            >
+              ×
+            </button>
+          </article>
+        }
+        @if (activeAlerts().length > 1) {
+          <div class="alerts-clear-row">
+            <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="clearAlerts()">
+              Clear All ({{ activeAlerts().length }})
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (sleeper.currentWeekMatchups().length > 0) {
+      <div class="matchup-deck" role="tablist" aria-label="Switch Watch Party matchup">
+        @for (card of sleeper.currentWeekMatchups(); track card.matchupId) {
+          <button
+            type="button"
+            class="ch-card ch-card-interactive deck-card"
+            [class.is-selected]="activeMatchup()?.matchupId === card.matchupId"
+            (click)="selectMatchup(card.matchupId)"
+          >
+            <div class="deck-top mono">
+              <span>M{{ card.matchupId }}</span>
+              <span class="ch-chip" [class.is-jade]="card.status === 'Live'" [class.is-neutral]="card.status !== 'Live'">
+                {{ card.status }}
+              </span>
+            </div>
+            <div class="deck-line" [class.is-win]="card.home.isWinner">
+              <span class="deck-name">{{ card.home.teamName }}</span>
+              <span class="deck-nums mono">
+                <strong>{{ card.home.points.toFixed(2) }}</strong>
+                @if (cardOdds(card.matchupId)?.homeWinPct; as hw) {
+                  <span class="deck-pct">{{ hw }}%</span>
+                }
+              </span>
+            </div>
+            @if (card.away; as away) {
+              <div class="deck-line" [class.is-win]="away.isWinner">
+                <span class="deck-name">{{ away.teamName }}</span>
+                <span class="deck-nums mono">
+                  <strong>{{ away.points.toFixed(2) }}</strong>
+                  @if (cardOdds(card.matchupId)?.awayWinPct; as aw) {
+                    <span class="deck-pct">{{ aw }}%</span>
+                  }
+                </span>
+              </div>
+            } @else {
+              <div class="deck-bye mono">Bye Week</div>
+            }
+          </button>
+        }
+      </div>
+    }
+
+    @if (activeMatchup(); as m) {
+      <section class="ch-feature wp-scorebug ch-cq">
+        <div class="bug-row">
+          <a class="bug-team" [routerLink]="['/teams', m.home.rosterId]">
+            <span class="ch-avatar sz-40 on-dark">
+              @if (m.home.avatarUrl) {
+                <img [src]="m.home.avatarUrl" [alt]="m.home.teamName" />
+              } @else {
+                <span>{{ m.home.initials }}</span>
+              }
+            </span>
+            <div class="bug-id">
+              <span class="bug-name">{{ m.home.teamName }}</span>
+              <span class="bug-sub mono">
+                {{ homeCounts().live }} live · {{ homeCounts().post }} done · {{ homeCounts().pre }} left
+              </span>
+            </div>
+            <div class="bug-score-col">
+              <span class="bug-pts mono" [class.is-signal]="m.home.isWinner">{{ m.home.points.toFixed(2) }}</span>
+              @if (activeOdds()?.homeProj; as hp) {
+                <span class="bug-proj mono">
+                  P {{ hp.toFixed(1) }}
+                  @if (activeOdds()?.homeWinPct !== null) {
+                    · {{ activeOdds()!.homeWinPct }}%
+                  }
+                </span>
+              }
+            </div>
+          </a>
+
+          <div class="bug-center mono">
+            <span class="ch-chip" [class.is-signal]="m.status === 'Live'" [class.is-dark-muted]="m.status !== 'Live'">
+              {{ m.status }}
+            </span>
+            <span class="bug-diff">{{ m.away ? 'Diff ' + m.margin.toFixed(2) : 'BYE' }}</span>
+            <a
+              class="scorebug-link"
+              [routerLink]="['/matchups']"
+              [queryParams]="{ week: week(), matchup: m.matchupId }"
+            >
+              Full Lineups ↗
+            </a>
+          </div>
+
+          @if (m.away; as away) {
+            <a class="bug-team is-away" [routerLink]="['/teams', away.rosterId]">
+              <span class="ch-avatar sz-40 on-dark">
+                @if (away.avatarUrl) {
+                  <img [src]="away.avatarUrl" [alt]="away.teamName" />
+                } @else {
+                  <span>{{ away.initials }}</span>
+                }
+              </span>
+              <div class="bug-id">
+                <span class="bug-name">{{ away.teamName }}</span>
+                <span class="bug-sub mono">
+                  {{ awayCounts().live }} live · {{ awayCounts().post }} done · {{ awayCounts().pre }} left
+                </span>
+              </div>
+              <div class="bug-score-col is-away">
+                <span class="bug-pts mono" [class.is-signal]="away.isWinner">{{ away.points.toFixed(2) }}</span>
+                @if (activeOdds()?.awayProj; as ap) {
+                  <span class="bug-proj mono">
+                    P {{ ap.toFixed(1) }}
+                    @if (activeOdds()?.awayWinPct !== null) {
+                      · {{ activeOdds()!.awayWinPct }}%
+                    }
+                  </span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+
+        @if (m.away && activeOdds()?.homeWinPct !== null && activeOdds()?.awayWinPct !== null) {
+          <div class="ch-odds-wrap">
+            <div class="ch-odds-labels mono">
+              <span><strong>{{ m.home.teamName }} · {{ activeOdds()!.homeWinPct }}%</strong></span>
+              <span class="ch-desktop-only">Win Odds by Projection</span>
+              <span><strong>{{ activeOdds()!.awayWinPct }}% · {{ m.away.teamName }}</strong></span>
+            </div>
+            <div class="ch-odds-bar" aria-label="Projected win probability bar">
+              <div class="ch-odds-fill" [style.width.%]="activeOdds()!.homeWinPct"></div>
+            </div>
+          </div>
+        }
+
+        @if (latestSpotlight(); as spot) {
+          <div class="bug-spotlight">
+            <span class="ch-chip mono" [class.is-signal]="spot.importance === 'touchdown'" [class.is-dark-muted]="spot.importance !== 'touchdown'">
+              {{ spot.tagLabel ?? 'IMPACT' }}
+            </span>
+            <span class="spot-txt">
+              <strong>{{ spot.playerName }}</strong> · {{ spot.text }}
+            </span>
+            <span class="mono spot-delta" [class.is-pos]="spot.pointsDelta > 0" [class.is-neg]="spot.pointsDelta < 0">
+              {{ spot.pointsDelta > 0 ? '+' : '' }}{{ spot.pointsDelta.toFixed(2) }}
+            </span>
+          </div>
+        }
+      </section>
+
+      @if (activeDrives().length > 0) {
+        <div class="drives-strip">
+          @for (drv of activeDrives(); track drv.gameId) {
+            <a
+              class="ch-card drive-chip ch-interactive"
+              [class.is-rz]="drv.isRedZone"
+              [routerLink]="['/games']"
+              [queryParams]="{ game: drv.gameId, week: week() }"
+            >
+              <div class="drv-top">
+                @if (drv.logo) {
+                  <img class="play-team-logo" [src]="drv.logo" [alt]="drv.shortName" />
+                }
+                <span class="drv-game mono">{{ drv.shortName }}</span>
+                @if (drv.isRedZone) {
+                  <span class="ch-rz-pill mono">RED ZONE</span>
+                } @else {
+                  <span class="drv-live mono">IN DRIVE</span>
+                }
+              </div>
+              <div class="drv-sit mono">{{ drv.downDistance }}</div>
+              <div class="drv-players">{{ drv.startersText }}</div>
+            </a>
+          }
+        </div>
+      }
+
+      <section class="plays-stage">
+        <div class="stage-bar">
+          <div>
+            <span class="ch-overline">Live Games Broadcast Feed</span>
+            <h2 class="ch-section-title">Fantasy Point Plays</h2>
+          </div>
+
+          <div class="wp-controls">
+            @if (focusedPlayerId()) {
+              <button type="button" class="ch-btn ch-btn-secondary is-compact" (click)="focusedPlayerId.set(null)">
+                Show All Players
+              </button>
+            }
+
+            <div class="ch-segmented" role="tablist" aria-label="Filter watch party plays">
+              <button type="button" class="ch-segment" [class.is-active]="!importantOnly()" (click)="importantOnly.set(false)">
+                All Live Plays ({{ playFeeds().totalHome + playFeeds().totalAway }})
+              </button>
+              <button type="button" class="ch-segment" [class.is-active]="importantOnly()" (click)="importantOnly.set(true)">
+                TDs &amp; Big Swings
+              </button>
+            </div>
+          </div>
+        </div>
+
+        @if (m.away) {
+          <div class="ch-segmented ch-mobile-only" role="tablist" aria-label="Focus team feed">
+            <button type="button" class="ch-segment" [class.is-active]="mobileFeedSide() === 'both'" (click)="mobileFeedSide.set('both')">
+              Both Feeds
+            </button>
+            <button type="button" class="ch-segment" [class.is-active]="mobileFeedSide() === 'home'" (click)="mobileFeedSide.set('home')">
+              {{ m.home.teamName }} ({{ playFeeds().home.length }})
+            </button>
+            <button type="button" class="ch-segment" [class.is-active]="mobileFeedSide() === 'away'" (click)="mobileFeedSide.set('away')">
+              {{ m.away.teamName }} ({{ playFeeds().away.length }})
+            </button>
+          </div>
+        }
+
+        <div class="ch-bento">
+          <section class="ch-card span-6 feed-card" [class.mobile-hidden]="mobileFeedSide() === 'away'">
+            <div class="feed-head">
+              <div class="feed-title-grp">
+                <h3 class="feed-team">{{ m.home.teamName }}</h3>
+                <span class="feed-sub mono">Total {{ m.home.points.toFixed(2) }}</span>
+              </div>
+              <span class="ch-chip is-neutral mono">{{ playFeeds().home.length }} plays</span>
+            </div>
+
+            @if (playFeeds().home.length === 0) {
+              <p class="empty-feed">
+                No plays recorded from live games yet for {{ m.home.teamName }} starters.
+              </p>
+            } @else {
+              <div class="ch-feed-list wp-feed">
+                @for (ev of playFeeds().home; track ev.id) {
+                  <div class="ch-play-event" [attr.data-imp]="ev.importance">
+                    <div class="ev-main">
+                      <div class="ev-top">
+                        <span class="ch-pos-pill mono" [attr.data-pos]="ev.position">{{ ev.position }}</span>
+                        <strong class="ev-player">{{ ev.playerName }}</strong>
+                        <span class="ch-cat-pill mono" [attr.data-cat]="ev.category">{{ ev.category }}</span>
+                        @if (ev.yardsLabel) {
+                          <span class="yd-pill mono">{{ ev.yardsLabel }}</span>
+                        }
+                        @if (ev.tagLabel) {
+                          <span class="ch-imp-badge mono" [attr.data-imp]="ev.importance">{{ ev.tagLabel }}</span>
+                        }
+                      </div>
+                      <p class="ev-short">{{ ev.text }}</p>
+                      <span class="ev-meta mono">
+                        {{ ev.matchupShort }} · {{ ev.quarter > 0 ? 'Q' + ev.quarter + ' ' + ev.clock : ev.clock }}
+                        @if (ev.downDistance) { · {{ ev.downDistance }} }
+                      </span>
+                    </div>
+                    <div class="ev-right">
+                      @if (ev.teamLogo) {
+                        <img class="play-team-logo" [src]="ev.teamLogo" [alt]="ev.nflTeam" />
+                      }
+                      <span class="ev-pts mono" [attr.data-imp]="ev.importance">
+                        {{ ev.pointsDelta > 0 ? '+' : '' }}{{ ev.pointsDelta.toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="ch-card span-6 feed-card" [class.mobile-hidden]="mobileFeedSide() === 'home'">
+            <div class="feed-head">
+              <div class="feed-title-grp">
+                <h3 class="feed-team">{{ m.away?.teamName ?? 'Bye Week' }}</h3>
+                @if (m.away; as away) {
+                  <span class="feed-sub mono">Total {{ away.points.toFixed(2) }}</span>
+                }
+              </div>
+              <span class="ch-chip is-neutral mono">{{ playFeeds().away.length }} plays</span>
+            </div>
+
+            @if (!m.away || playFeeds().away.length === 0) {
+              <p class="empty-feed">
+                {{ m.away ? 'No plays recorded from live games yet for ' + m.away.teamName + ' starters.' : 'Team on bye week.' }}
+              </p>
+            } @else {
+              <div class="ch-feed-list wp-feed">
+                @for (ev of playFeeds().away; track ev.id) {
+                  <div class="ch-play-event" [attr.data-imp]="ev.importance">
+                    <div class="ev-main">
+                      <div class="ev-top">
+                        <span class="ch-pos-pill mono" [attr.data-pos]="ev.position">{{ ev.position }}</span>
+                        <strong class="ev-player">{{ ev.playerName }}</strong>
+                        <span class="ch-cat-pill mono" [attr.data-cat]="ev.category">{{ ev.category }}</span>
+                        @if (ev.yardsLabel) {
+                          <span class="yd-pill mono">{{ ev.yardsLabel }}</span>
+                        }
+                        @if (ev.tagLabel) {
+                          <span class="ch-imp-badge mono" [attr.data-imp]="ev.importance">{{ ev.tagLabel }}</span>
+                        }
+                      </div>
+                      <p class="ev-short">{{ ev.text }}</p>
+                      <span class="ev-meta mono">
+                        {{ ev.matchupShort }} · {{ ev.quarter > 0 ? 'Q' + ev.quarter + ' ' + ev.clock : ev.clock }}
+                        @if (ev.downDistance) { · {{ ev.downDistance }} }
+                      </span>
+                    </div>
+                    <div class="ev-right">
+                      @if (ev.teamLogo) {
+                        <img class="play-team-logo" [src]="ev.teamLogo" [alt]="ev.nflTeam" />
+                      }
+                      <span class="ev-pts mono" [attr.data-imp]="ev.importance">
+                        {{ ev.pointsDelta > 0 ? '+' : '' }}{{ ev.pointsDelta.toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        </div>
+      </section>
+
+      <section class="live-players-section">
+        <div class="stage-bar">
+          <div>
+            <span class="ch-overline">On The Field Now</span>
+            <h2 class="ch-section-title">Live Players</h2>
+          </div>
+          <span class="ch-chip is-jade mono">
+            {{ liveHomeStarters().length + liveAwayStarters().length }} live · tap player to filter
+          </span>
+        </div>
+
+        @if (liveHomeStarters().length === 0 && liveAwayStarters().length === 0) {
+          <div class="ch-card ch-empty-state">
+            <h3 class="ch-section-title">No games currently in progress</h3>
+            <p>Live starter tracking and play-by-play updates appear here automatically whenever kickoff is underway.</p>
+          </div>
+        } @else {
+          <div class="ch-bento">
+            <section class="ch-card span-6 feed-card" [class.mobile-hidden]="mobileFeedSide() === 'away'">
+              <div class="feed-head">
+                <h3 class="feed-team">{{ m.home.teamName }} Live</h3>
+                <span class="ch-chip is-jade mono">{{ liveHomeStarters().length }} active</span>
+              </div>
+
+              @if (liveHomeStarters().length === 0) {
+                <p class="empty-feed">No starters currently in live games.</p>
+              } @else {
+                <div class="starters-list">
+                  @for (st of liveHomeStarters(); track st.playerId) {
+                    <button
+                      type="button"
+                      class="starter-row is-live"
+                      [class.is-focused]="focusedPlayerId() === st.playerId"
+                      (click)="togglePlayerFilter(st.playerId)"
+                    >
+                      <span class="ch-pos-pill mono" [attr.data-pos]="st.position">{{ st.slotLabel }}</span>
+                      <div class="st-info">
+                        <div class="st-name-line">
+                          <strong>{{ st.name }}</strong>
+                          <span class="ev-meta mono">{{ st.nflTeam }}</span>
+                          @if (st.game?.situation?.isRedZone) {
+                            <span class="ch-rz-pill mono">RED ZONE</span>
+                          }
+                        </div>
+                        @if (st.game; as g) {
+                          <span class="ev-meta mono">
+                            {{ g.away.abbr }} {{ g.away.score }}-{{ g.home.score }} {{ g.home.abbr }} · {{ g.statusDetail }}
+                          </span>
+                        }
+                      </div>
+                      <span class="st-pts mono">{{ st.currentPoints.toFixed(2) }}p</span>
+                    </button>
+                  }
+                </div>
+              }
+            </section>
+
+            @if (m.away; as away) {
+              <section class="ch-card span-6 feed-card" [class.mobile-hidden]="mobileFeedSide() === 'home'">
+                <div class="feed-head">
+                  <h3 class="feed-team">{{ away.teamName }} Live</h3>
+                  <span class="ch-chip is-jade mono">{{ liveAwayStarters().length }} active</span>
+                </div>
+
+                @if (liveAwayStarters().length === 0) {
+                  <p class="empty-feed">No starters currently in live games.</p>
+                } @else {
+                  <div class="starters-list">
+                    @for (st of liveAwayStarters(); track st.playerId) {
+                      <button
+                        type="button"
+                        class="starter-row is-live"
+                        [class.is-focused]="focusedPlayerId() === st.playerId"
+                        (click)="togglePlayerFilter(st.playerId)"
+                      >
+                        <span class="ch-pos-pill mono" [attr.data-pos]="st.position">{{ st.slotLabel }}</span>
+                        <div class="st-info">
+                          <div class="st-name-line">
+                            <strong>{{ st.name }}</strong>
+                            <span class="ev-meta mono">{{ st.nflTeam }}</span>
+                            @if (st.game?.situation?.isRedZone) {
+                              <span class="ch-rz-pill mono">RED ZONE</span>
+                            }
+                          </div>
+                          @if (st.game; as g) {
+                            <span class="ev-meta mono">
+                              {{ g.away.abbr }} {{ g.away.score }}-{{ g.home.score }} {{ g.home.abbr }} · {{ g.statusDetail }}
+                            </span>
+                          }
+                        </div>
+                        <span class="st-pts mono">{{ st.currentPoints.toFixed(2) }}p</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </section>
+            }
+          </div>
+        }
+      </section>
+    } @else {
+      <section class="ch-card pre-season-card">
+        <span class="ch-overline">
+          @if (sleeper.seasonPhase() === 'pre_draft' || sleeper.seasonPhase() === 'drafting') {
+            Pre-Season &amp; Draft Window
+          } @else {
+            Off-Season Mode
+          }
+        </span>
+        <h2 class="ch-section-title">No live weekly matchups active yet</h2>
+        <p class="pre-season-copy">
+          Watch Party streams live NFL play-by-play, red-zone alerts, and scoring swings once Week 1 kickoffs begin. Use Broadcast / Test Alert above anytime to preview banner styling and optional audio chimes.
+        </p>
+        <div class="ch-flex-row pre-season-actions">
+          <a class="ch-btn ch-btn-primary is-compact" routerLink="/draft">Draft Board</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/games">NFL Scoreboard</a>
+          <a class="ch-btn ch-btn-secondary is-compact" routerLink="/history">League History</a>
+        </div>
+      </section>
+    }
+  </div>
+}

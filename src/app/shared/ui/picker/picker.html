@@ -1,0 +1,158 @@
+<button
+  #triggerBtn
+  type="button"
+  class="picker-trigger"
+  aria-haspopup="listbox"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled()"
+  (click)="toggle()"
+>
+  @if (selectedOption(); as sel) {
+    <span class="trigger-leading">
+      @if (sel.avatarUrl) {
+        <span class="ch-avatar sz-20"><img [src]="sel.avatarUrl" [alt]="sel.label" /></span>
+      } @else if (sel.initials) {
+        <span class="ch-avatar sz-20">{{ sel.initials }}</span>
+      }
+      <span class="trigger-text">
+        <span class="trigger-label">{{ sel.label }}</span>
+        @if (sel.sub && !compact()) {
+          <span class="trigger-sub mono">{{ sel.sub }}</span>
+        }
+      </span>
+    </span>
+    @if (sel.badge && !compact()) {
+      <span class="trigger-badge mono">{{ sel.badge }}</span>
+    }
+  } @else {
+    <span class="trigger-placeholder">{{ placeholder() }}</span>
+  }
+  <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path
+      d="M4 6l4 4 4-4"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</button>
+
+@if (open()) {
+  @if (isMobileViewport()) {
+    <app-bottom-sheet [open]="true" [title]="sheetTitle()" (closed)="close()">
+      @if (searchable() || options().length > 8) {
+        <div class="picker-search-wrap">
+          <input
+            type="search"
+            class="ch-input"
+            aria-label="Filter options"
+            placeholder="Filter list..."
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+          />
+        </div>
+      }
+
+      <div class="picker-list" role="listbox" [attr.aria-label]="ariaLabel()">
+        @for (opt of filteredOptions(); track $index) {
+          <button
+            type="button"
+            role="option"
+            class="picker-option"
+            [class.is-selected]="opt.value === value()"
+            [attr.aria-selected]="opt.value === value()"
+            [disabled]="opt.disabled"
+            (click)="select(opt)"
+          >
+            <div class="opt-main">
+              @if (opt.avatarUrl) {
+                <span class="ch-avatar sz-32"><img [src]="opt.avatarUrl" [alt]="opt.label" /></span>
+              } @else if (opt.initials) {
+                <span class="ch-avatar sz-32">{{ opt.initials }}</span>
+              }
+              <div class="opt-copy">
+                <strong class="opt-label">{{ opt.label }}</strong>
+                @if (opt.sub) {
+                  <span class="opt-sub mono">{{ opt.sub }}</span>
+                }
+              </div>
+            </div>
+            <div class="opt-right">
+              @if (opt.badge) {
+                <span class="ch-chip is-neutral mono">{{ opt.badge }}</span>
+              }
+              @if (opt.value === value()) {
+                <span class="opt-check" aria-hidden="true">✓</span>
+              }
+            </div>
+          </button>
+        } @empty {
+          <p class="picker-empty">No matching options.</p>
+        }
+      </div>
+    </app-bottom-sheet>
+  } @else {
+    <div
+      class="picker-popover"
+      role="listbox"
+      [attr.aria-label]="ariaLabel()"
+      [class.is-up]="popoverPos().openUp"
+      [style.top.px]="popoverPos().top"
+      [style.left.px]="popoverPos().left"
+      [style.minWidth.px]="popoverPos().width"
+    >
+      @if (searchable() || options().length > 9) {
+        <div class="popover-search-wrap">
+          <input
+            type="search"
+            class="ch-input popover-search"
+            aria-label="Filter options"
+            placeholder="Filter..."
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+          />
+        </div>
+      }
+
+      <div class="popover-list">
+        @for (opt of filteredOptions(); track $index) {
+          <button
+            type="button"
+            role="option"
+            class="popover-option"
+            [class.is-selected]="opt.value === value()"
+            [attr.aria-selected]="opt.value === value()"
+            [disabled]="opt.disabled"
+            (click)="select(opt)"
+          >
+            <div class="opt-main">
+              @if (opt.avatarUrl) {
+                <span class="ch-avatar sz-20"><img [src]="opt.avatarUrl" [alt]="opt.label" /></span>
+              } @else if (opt.initials) {
+                <span class="ch-avatar sz-20">{{ opt.initials }}</span>
+              }
+              <div class="opt-copy">
+                <span class="opt-label">{{ opt.label }}</span>
+                @if (opt.sub) {
+                  <span class="opt-sub mono">{{ opt.sub }}</span>
+                }
+              </div>
+            </div>
+            <div class="opt-right">
+              @if (opt.badge) {
+                <span class="popover-badge mono">{{ opt.badge }}</span>
+              }
+              @if (opt.value === value()) {
+                <span class="opt-check" aria-hidden="true">✓</span>
+              }
+            </div>
+          </button>
+        } @empty {
+          <p class="picker-empty">No matching options.</p>
+        }
+      </div>
+    </div>
+  }
+}

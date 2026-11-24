@@ -1,0 +1,143 @@
+@use 'mixins' as *;
+
+.chart-panel {
+  @include stack(14px);
+}
+
+.chart-head {
+  @include row(12px, flex-end, space-between, wrap);
+}
+
+.focus-pill {
+  padding: 6px 12px;
+  border-radius: var(--r-xs);
+  @include row(8px, center, flex-start, wrap);
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+
+  .sep {
+    color: var(--border-strong);
+  }
+
+  .pts {
+    color: var(--jade);
+    font-weight: 600;
+  }
+}
+
+.empty-chart {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+}
+
+.svg-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  svg {
+    width: 100%;
+    min-width: 320px;
+    height: auto;
+    display: block;
+  }
+}
+
+.ref-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.axis-text,
+.week-text {
+  fill: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.bar-item {
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+
+  .bar-rect {
+    fill: var(--chart-secondary);
+    opacity: 0.78;
+    transition: opacity 140ms ease;
+  }
+
+  &.is-win .bar-rect {
+    fill: var(--chart-primary);
+  }
+
+  &.is-loss .bar-rect {
+    fill: var(--loss-bar);
+  }
+
+  &:hover .bar-rect,
+  &.is-focused .bar-rect {
+    opacity: 1;
+  }
+
+  &.is-focused .week-text {
+    fill: var(--jade);
+    font-weight: 700;
+  }
+}
+
+.avg-line {
+  stroke: var(--chart-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+
+.avg-dot {
+  fill: var(--surface);
+  stroke: var(--chart-primary);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.legend-row {
+  @include row(14px, center, flex-start, wrap);
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+}
+
+.legend-item {
+  @include row(6px, center);
+}
+
+.legend-hint {
+  color: var(--ink-muted);
+
+  @include mq(sm) {
+    margin-left: auto;
+  }
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+
+  &.win {
+    background: var(--chart-primary);
+  }
+
+  &.loss {
+    background: var(--loss-bar);
+  }
+
+  &.avg {
+    width: 16px;
+    height: 0;
+    border-top: 2px dashed var(--chart-secondary);
+  }
+}

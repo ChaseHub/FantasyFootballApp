@@ -1,0 +1,206 @@
+@layer themes {
+  /* Theme 2: Midnight Stadium (Dark Obsidian + Mint + Signal) */
+  [data-theme='midnight-graphite'] {
+    --canvas: #0e1514;
+    --surface: #151f1d;
+    --surface-soft: #1b2724;
+    --surface-recessed: #101816;
+    --border: #263632;
+    --border-strong: #374f48;
+    --ink: #f1f5f3;
+    --ink-secondary: #b6c6bf;
+    --ink-muted: #8ea39a;
+
+    --jade: #48c9a0;
+    --jade-hover: #62dbb5;
+    --jade-soft: rgba(72, 201, 160, 0.16);
+    --graphite: #101917;
+    --graphite-raised: #1c2a27;
+    --graphite-hover: #253834;
+    --on-graphite: #f3f7f5;
+    --on-graphite-muted: #adc0b7;
+    --signal: #dcf288;
+    --signal-hover: #eaf9a6;
+    --brass: #d4aa6a;
+    --on-accent: #091310;
+    --btn-primary-bg: var(--jade);
+    --btn-primary-fg: #091310;
+
+    --positive: #52d18d;
+    --positive-soft: rgba(82, 209, 141, 0.16);
+    --negative: #f28279;
+    --negative-soft: rgba(242, 130, 121, 0.16);
+    --warning: #eab364;
+    --warning-soft: rgba(234, 179, 100, 0.16);
+    --neutral-soft: rgba(255, 255, 255, 0.07);
+    --loss-bar: #a86b66;
+    --neutral-bar: #6b827b;
+
+    --pos-qb: #f28279;
+    --pos-qb-bg: rgba(242, 130, 121, 0.11);
+    --pos-rb: #48c9a0;
+    --pos-rb-bg: rgba(72, 201, 160, 0.11);
+    --pos-wr: #6eb5d6;
+    --pos-wr-soft: rgba(110, 181, 214, 0.16);
+    --pos-wr-bg: rgba(110, 181, 214, 0.11);
+    --pos-te: #eab364;
+    --pos-te-bg: rgba(234, 179, 100, 0.11);
+
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.28);
+    --shadow-card-hover: 0 8px 28px rgba(0, 0, 0, 0.38);
+    --shadow-feature: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.38);
+    --shadow-recessed: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Theme 3: Nordic Editorial (Light Ice Slate + Cobalt + Amber) */
+  [data-theme='nordic-slate'] {
+    --canvas: #edf1f5;
+    --surface: #ffffff;
+    --surface-soft: #f5f8fb;
+    --surface-recessed: #e5ebf1;
+    --border: #cfd8e3;
+    --border-strong: #adbac9;
+    --ink: #142033;
+    --ink-secondary: #43536b;
+    --ink-muted: #5d6e85;
+
+    --jade: #1d4ed8;
+    --jade-hover: #1e40af;
+    --jade-soft: #e0ebff;
+    --graphite: #162238;
+    --graphite-raised: #223352;
+    --graphite-hover: #2c4166;
+    --on-graphite: #f5f8fc;
+    --on-graphite-muted: #b6c5dc;
+    --signal: #fbbf24;
+    --signal-hover: #fcd34d;
+    --brass: #d97706;
+  }
+
+  /* Theme 4: Floodlight Bronze (Dark Espresso Onyx + Gold + Teal) */
+  [data-theme='gridiron-amber'] {
+    --canvas: #12100e;
+    --surface: #1b1714;
+    --surface-soft: #231e1a;
+    --surface-recessed: #15110e;
+    --border: #332c25;
+    --border-strong: #4a3f34;
+    --ink: #f5efe6;
+    --ink-secondary: #cbbca8;
+    --ink-muted: #9b8c79;
+
+    --jade: #e5a93c;
+    --jade-hover: #f0bc5e;
+    --jade-soft: rgba(229, 169, 60, 0.16);
+    --graphite: #18130f;
+    --graphite-raised: #261f18;
+    --graphite-hover: #332a21;
+    --on-graphite: #faf4eb;
+    --on-graphite-muted: #c7b8a3;
+    --signal: #3fb8af;
+    --signal-hover: #5cd1c8;
+    --brass: #e5a93c;
+    --on-accent: #161009;
+    --btn-primary-bg: var(--jade);
+    --btn-primary-fg: #161009;
+
+    --positive: #52d18d;
+    --positive-soft: rgba(82, 209, 141, 0.16);
+    --negative: #f28479;
+    --negative-soft: rgba(242, 132, 121, 0.16);
+    --warning: #f0b85b;
+    --warning-soft: rgba(240, 184, 91, 0.16);
+    --neutral-soft: rgba(255, 255, 255, 0.07);
+    --loss-bar: #a86c66;
+
+    --pos-qb: #f28479;
+    --pos-qb-bg: rgba(242, 132, 121, 0.11);
+    --pos-rb: #52d18d;
+    --pos-rb-bg: rgba(82, 209, 141, 0.11);
+    --pos-wr: #67c2d6;
+    --pos-wr-soft: rgba(103, 194, 214, 0.16);
+    --pos-wr-bg: rgba(103, 194, 214, 0.11);
+    --pos-te: #e5a93c;
+    --pos-te-bg: rgba(229, 169, 60, 0.11);
+
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.34);
+    --shadow-feature: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.44);
+    --shadow-recessed: inset 0 1px 3px rgba(0, 0, 0, 0.38);
+  }
+
+  /* Theme 5: Classic Playbook (Light Chalk Parchment + Garnet + Navy) */
+  [data-theme='crimson-playbook'] {
+    --canvas: #f6f1ea;
+    --surface: #fffdfb;
+    --surface-soft: #f9f5ef;
+    --surface-recessed: #ede6dc;
+    --border: #dcd2c6;
+    --border-strong: #bfb1a0;
+    --ink: #1e1c1a;
+    --ink-secondary: #544d46;
+    --ink-muted: #70675e;
+
+    --jade: #8c2732;
+    --jade-hover: #701d26;
+    --jade-soft: #f9e8ea;
+    --graphite: #1d2d44;
+    --graphite-raised: #2a3e5c;
+    --graphite-hover: #354d70;
+    --on-graphite: #fbf8f3;
+    --on-graphite-muted: #c2cad6;
+    --signal: #e7c370;
+    --signal-hover: #f0d28b;
+    --brass: #b88c32;
+  }
+
+  /* Theme 6: Night Turf (Dark Forest Field + Spring Emerald + Yard Gold) */
+  [data-theme='emerald-turf'] {
+    --canvas: #0b1612;
+    --surface: #12231c;
+    --surface-soft: #172c23;
+    --surface-recessed: #0d1a15;
+    --border: #233f33;
+    --border-strong: #325949;
+    --ink: #ebf5ef;
+    --ink-secondary: #b0cebe;
+    --ink-muted: #84a895;
+
+    --jade: #34d399;
+    --jade-hover: #4be4ac;
+    --jade-soft: rgba(52, 211, 153, 0.16);
+    --graphite: #0a1712;
+    --graphite-raised: #162c22;
+    --graphite-hover: #1f3c2f;
+    --on-graphite: #eef7f1;
+    --on-graphite-muted: #aad0bb;
+    --signal: #fde047;
+    --signal-hover: #fef08a;
+    --brass: #eab308;
+    --on-accent: #071710;
+    --btn-primary-bg: var(--jade);
+    --btn-primary-fg: #071710;
+
+    --positive: #34d399;
+    --positive-soft: rgba(52, 211, 153, 0.16);
+    --negative: #fb7185;
+    --negative-soft: rgba(251, 113, 133, 0.16);
+    --warning: #facc15;
+    --warning-soft: rgba(250, 204, 21, 0.16);
+    --neutral-soft: rgba(255, 255, 255, 0.07);
+    --loss-bar: #a46472;
+
+    --pos-qb: #fb7185;
+    --pos-qb-bg: rgba(251, 113, 133, 0.11);
+    --pos-rb: #34d399;
+    --pos-rb-bg: rgba(52, 211, 153, 0.11);
+    --pos-wr: #60a5fa;
+    --pos-wr-soft: rgba(96, 165, 250, 0.16);
+    --pos-wr-bg: rgba(96, 165, 250, 0.11);
+    --pos-te: #facc15;
+    --pos-te-bg: rgba(250, 204, 21, 0.11);
+
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.34);
+    --shadow-feature: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.44);
+    --shadow-recessed: inset 0 1px 3px rgba(0, 0, 0, 0.38);
+  }
+}

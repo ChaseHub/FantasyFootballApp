@@ -1,0 +1,677 @@
+@if (sleeper.loading() && !sleeper.dashboard()) {
+  <div class="ch-page ch-stack standings-page">
+    <header class="page-head">
+      <span class="ch-skeleton" style="width: 180px; height: 34px;"></span>
+      <span class="ch-skeleton" style="width: 240px; height: 16px;"></span>
+    </header>
+    <span class="ch-skeleton-dark" style="height: 150px;"></span>
+    <span class="ch-skeleton" style="height: 380px;"></span>
+  </div>
+} @else if (sleeper.dashboard(); as data) {
+  <div class="ch-page ch-stack standings-page ch-enter">
+    <app-page-header
+      [overline]="'League Classification · ' + data.league.season"
+      title="Standings"
+      [context]="
+        data.league.name +
+        ' · Top ' +
+        playoffTeamsCount() +
+        ' qualify for playoffs (Week ' +
+        (data.league.settings.playoff_week_start ?? 15) +
+        ')'
+      "
+      [mobileContext]="data.league.name + ' · Top ' + playoffTeamsCount() + ' qualify'"
+      [meta]="'Updated ' + data.loadedAtTime"
+    >
+      <a class="ch-btn ch-btn-secondary is-compact" routerLink="/playoffs">Bracket View →</a>
+      <button type="button" class="ch-btn ch-btn-ghost is-compact" (click)="copyShareLink()">Share View</button>
+    </app-page-header>
+
+    @if (playoffSummary(); as sum) {
+      <section class="ch-feature ch-stack playoff-banner">
+        <div class="ch-row-between">
+          <div>
+            <span class="ch-overline on-dark">Playoff Race · Week {{ data.currentWeek }}</span>
+            <h2 class="banner-title">Seeds, Cut Line &amp; Power Leaders</h2>
+          </div>
+          @if (sleeper.myTeam(); as mine) {
+            <a class="ch-chip is-jade mono mine-pill" [routerLink]="['/teams', mine.rosterId]">
+              My Seed #{{ mine.standingsRank }} · {{ mine.recordLabel }}
+            </a>
+          }
+        </div>
+
+        <div class="ch-stat-strip-4">
+          <a class="ch-feature-tile seed-tile" [routerLink]="['/teams', sum.topSeed.rosterId]">
+            <span class="ch-team-hero-stat">#1 Overall Seed</span>
+            <strong class="ch-team-hero-val tile-name">{{ sum.topSeed.teamName }}</strong>
+            <span class="ch-team-hero-sub mono is-signal">
+              {{ sum.topSeed.recordLabel }} · {{ sum.topSeed.pointsFor.toFixed(1) }} PF
+            </span>
+          </a>
+
+          <a class="ch-feature-tile seed-tile" [routerLink]="['/teams', sum.lastSeed.rosterId]">
+            <span class="ch-team-hero-stat">Cut Line (#{{ sum.cut }})</span>
+            <strong class="ch-team-hero-val tile-name">{{ sum.lastSeed.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              {{ sum.lastSeed.recordLabel }} · {{ sum.lastSeed.pointsFor.toFixed(1) }} PF
+            </span>
+          </a>
+
+          @if (sum.firstOut; as outTeam) {
+            <a class="ch-feature-tile seed-tile" [routerLink]="['/teams', outTeam.rosterId]">
+              <span class="ch-team-hero-stat">First Out (#{{ sum.cut + 1 }})</span>
+              <strong class="ch-team-hero-val tile-name">{{ outTeam.teamName }}</strong>
+              <span class="ch-team-hero-sub mono">
+                {{ outTeam.recordLabel }} · {{ outTeam.pointsFor.toFixed(1) }} PF
+              </span>
+            </a>
+          } @else {
+            <a class="ch-feature-tile seed-tile" [routerLink]="['/teams', sum.topScorer.rosterId]">
+              <span class="ch-team-hero-stat">Scoring Leader</span>
+              <strong class="ch-team-hero-val tile-name">{{ sum.topScorer.teamName }}</strong>
+              <span class="ch-team-hero-sub mono">
+                {{ sum.topScorer.pointsFor.toFixed(1) }} PF · {{ avgPpg(sum.topScorer) }}/wk
+              </span>
+            </a>
+          }
+
+          <a class="ch-feature-tile seed-tile" [routerLink]="['/teams', sum.powerLeader.rosterId]">
+            <span class="ch-team-hero-stat">Power #1</span>
+            <strong class="ch-team-hero-val tile-name">{{ sum.powerLeader.teamName }}</strong>
+            <span class="ch-team-hero-sub mono">
+              Score {{ sum.powerLeader.powerScore.toFixed(1) }} · AP {{ sum.powerLeader.allPlayWins }}-{{
+                sum.powerLeader.allPlayLosses
+              }}
+            </span>
+          </a>
+        </div>
+      </section>
+    }
+
+    <div class="ch-bento">
+      <section class="ch-card span-12 table-panel">
+        <div class="table-head">
+          <div>
+            <span class="ch-overline">Full Standings Matrix</span>
+            <h2 class="ch-section-title">Records, Efficiency &amp; Power</h2>
+          </div>
+
+          <div class="standings-controls">
+            <div class="mobile-sort-bar ch-mobile-only">
+              <app-picker
+                [options]="sortPickerOptions"
+                [value]="sortColumn()"
+                [compact]="true"
+                ariaLabel="Sort standings metric"
+                sheetTitle="Sort Standings By"
+                (valueChange)="onSortSelect($event)"
+              />
+              <button type="button" class="ch-btn ch-btn-secondary" (click)="flipSortDir()">
+                {{ sortDir() === 'asc' ? 'Asc ↑' : 'Desc ↓' }}
+              </button>
+            </div>
+
+            <div class="ch-segmented" role="tablist" aria-label="Filter standings scope">
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="scopeFilter() === 'all'"
+                (click)="setScope('all')"
+              >
+                All Teams
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="scopeFilter() === 'playoffs'"
+                (click)="setScope('playoffs')"
+              >
+                In Playoffs
+              </button>
+              <button
+                type="button"
+                class="ch-segment"
+                [class.is-active]="scopeFilter() === 'chasing'"
+                (click)="setScope('chasing')"
+              >
+                Chasing
+              </button>
+            </div>
+
+            @if (sortColumn() !== 'standings' || sortDir() !== 'asc' || scopeFilter() !== 'all') {
+              <button type="button" class="ch-btn ch-btn-ghost reset-btn" (click)="resetSort()">
+                Reset ×
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Mobile Card Feed -->
+        <div class="ch-mobile-feed mobile-standings-feed">
+          @for (team of sortedTeams(); track team.rosterId; let idx = $index) {
+            <a
+              class="ch-data-card ch-interactive"
+              [class.is-highlighted]="myRosterId() === team.rosterId"
+              [routerLink]="['/teams', team.rosterId]"
+            >
+              <div class="m-card-top">
+                <div class="team-cell">
+                  <span class="rank-num mono">#{{ team.standingsRank }}</span>
+                  <span class="ch-avatar sz-32">
+                    @if (team.avatarUrl) {
+                      <img [src]="team.avatarUrl" [alt]="team.teamName" />
+                    } @else {
+                      {{ team.initials }}
+                    }
+                  </span>
+                  <div class="ch-stack team-copy">
+                    <div class="ch-flex-row">
+                      <span class="team-name">{{ team.teamName }}</span>
+                      @if (myRosterId() === team.rosterId) {
+                        <span class="ch-chip is-jade">You</span>
+                      }
+                    </div>
+                    <span class="team-mgr mono">{{ team.recordLabel }} · {{ team.managerName }}</span>
+                  </div>
+                </div>
+
+                <span
+                  class="ch-chip"
+                  [class.is-jade]="team.standingsRank <= playoffTeamsCount()"
+                  [class.is-neutral]="team.standingsRank > playoffTeamsCount()"
+                >
+                  {{ team.standingsRank <= playoffTeamsCount() ? 'In' : 'Out' }}
+                </span>
+              </div>
+
+              <div class="ch-data-card-metrics m-metrics-4">
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">PF (PPG)</span>
+                  <span class="ch-data-metric-val mono">{{ team.pointsFor.toFixed(0) }} ({{ avgPpg(team) }})</span>
+                </div>
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">All-Play</span>
+                  <span class="ch-data-metric-val mono">{{ team.allPlayWins }}-{{ team.allPlayLosses }}</span>
+                </div>
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">Power</span>
+                  <span class="ch-data-metric-val mono">#{{ team.powerRank }}</span>
+                </div>
+                <div class="ch-data-metric">
+                  <span class="ch-data-metric-lbl">Luck</span>
+                  <span
+                    class="ch-data-metric-val mono"
+                    [class.is-pos]="team.luckScore > 0.2"
+                    [class.is-neg]="team.luckScore < -0.2"
+                  >
+                    {{ team.luckScore >= 0 ? '+' : '' }}{{ team.luckScore.toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+            </a>
+
+            @if (
+              scopeFilter() === 'all' &&
+              sortColumn() === 'standings' &&
+              sortDir() === 'asc' &&
+              idx + 1 === playoffTeamsCount() &&
+              idx + 1 < sortedTeams().length
+            ) {
+              <div class="cutoff-line mobile-cutoff">
+                <span class="ch-overline">Playoff Cut · Top {{ playoffTeamsCount() }}</span>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Tablet/Desktop Table -->
+        <div class="ch-table-wrap ch-desktop-table">
+          <table class="ch-table standings-table">
+            <thead>
+              <tr>
+                <th [attr.aria-sort]="ariaSort('standings')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('standings')">
+                    # {{ sortArrow('standings') }}
+                  </button>
+                </th>
+                <th class="ch-sticky-col">Franchise</th>
+                <th>W–L</th>
+                <th class="num" [attr.aria-sort]="ariaSort('pointsFor')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('pointsFor')">
+                    PF {{ sortArrow('pointsFor') }}
+                  </button>
+                </th>
+                <th class="num">PPG</th>
+                <th class="num" [attr.aria-sort]="ariaSort('pointsAgainst')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('pointsAgainst')">
+                    PA {{ sortArrow('pointsAgainst') }}
+                  </button>
+                </th>
+                <th class="num" [attr.aria-sort]="ariaSort('diff')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('diff')">
+                    Diff {{ sortArrow('diff') }}
+                  </button>
+                </th>
+                <th class="num" [attr.aria-sort]="ariaSort('allPlay')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('allPlay')">
+                    All-Play {{ sortArrow('allPlay') }}
+                  </button>
+                </th>
+                <th class="num" [attr.aria-sort]="ariaSort('efficiency')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('efficiency')">
+                    Eff % {{ sortArrow('efficiency') }}
+                  </button>
+                </th>
+                <th class="num" [attr.aria-sort]="ariaSort('luck')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('luck')">
+                    Luck {{ sortArrow('luck') }}
+                  </button>
+                </th>
+                <th class="num" [attr.aria-sort]="ariaSort('power')">
+                  <button type="button" class="sort-btn" (click)="toggleSort('power')">
+                    Power {{ sortArrow('power') }}
+                  </button>
+                </th>
+                <th>Streak</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (team of sortedTeams(); track team.rosterId; let idx = $index) {
+                <tr
+                  class="is-clickable"
+                  [class.is-my-row]="myRosterId() === team.rosterId"
+                  [routerLink]="['/teams', team.rosterId]"
+                >
+                  <td class="mono rank-num">{{ team.standingsRank }}</td>
+                  <td class="ch-sticky-col">
+                    <div class="team-cell">
+                      <span class="ch-avatar sz-32">
+                        @if (team.avatarUrl) {
+                          <img [src]="team.avatarUrl" [alt]="team.teamName" />
+                        } @else {
+                          {{ team.initials }}
+                        }
+                      </span>
+                      <div class="ch-stack team-copy">
+                        <div class="ch-flex-row">
+                          <span class="team-name">{{ team.teamName }}</span>
+                          @if (myRosterId() === team.rosterId) {
+                            <span class="ch-chip is-jade">You</span>
+                          }
+                        </div>
+                        <span class="team-mgr">{{ team.managerName }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mono">{{ team.recordLabel }}</td>
+                  <td class="num strong-num">{{ team.pointsFor.toFixed(1) }}</td>
+                  <td class="num muted-num">{{ avgPpg(team) }}</td>
+                  <td class="num muted-num">{{ team.pointsAgainst.toFixed(1) }}</td>
+                  <td
+                    class="num"
+                    [class.is-pos]="team.pointDifferential > 0"
+                    [class.is-neg]="team.pointDifferential < 0"
+                  >
+                    {{ team.pointDifferential >= 0 ? '+' : '' }}{{ team.pointDifferential.toFixed(1) }}
+                  </td>
+                  <td class="num muted-num">{{ team.allPlayWins }}-{{ team.allPlayLosses }}</td>
+                  <td class="num">{{ team.lineupEfficiencyPct.toFixed(1) }}%</td>
+                  <td
+                    class="num"
+                    [class.is-pos]="team.luckScore > 0.2"
+                    [class.is-neg]="team.luckScore < -0.2"
+                  >
+                    {{ team.luckScore >= 0 ? '+' : '' }}{{ team.luckScore.toFixed(2) }}
+                  </td>
+                  <td class="num">
+                    <span class="mono">#{{ team.powerRank }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="ch-chip mono"
+                      [class.is-positive]="isWinStreak(team.streak)"
+                      [class.is-negative]="!isWinStreak(team.streak) && team.streak !== '—'"
+                    >
+                      {{ team.streak }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="ch-chip"
+                      [class.is-jade]="team.standingsRank <= playoffTeamsCount()"
+                      [class.is-neutral]="team.standingsRank > playoffTeamsCount()"
+                    >
+                      {{ team.standingsRank <= playoffTeamsCount() ? 'In Playoffs' : 'Chasing' }}
+                    </span>
+                  </td>
+                </tr>
+
+                @if (
+                  scopeFilter() === 'all' &&
+                  sortColumn() === 'standings' &&
+                  sortDir() === 'asc' &&
+                  idx + 1 === playoffTeamsCount() &&
+                  idx + 1 < sortedTeams().length
+                ) {
+                  <tr class="cutoff-row">
+                    <td colspan="13">
+                      <div class="cutoff-line">
+                        <span class="ch-overline">Playoff Cut · Top {{ playoffTeamsCount() }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="ch-card ch-stack span-7 comparison-card">
+        <div class="ch-row-between comp-head">
+          <div>
+            <span class="ch-overline">Scoring Distribution</span>
+            <h2 class="ch-section-title">Points For vs Points Against</h2>
+          </div>
+          <div class="comp-legend">
+            <span class="leg-item"><span class="dot pf"></span>PF</span>
+            <span class="leg-item"><span class="dot pa"></span>PA</span>
+          </div>
+        </div>
+
+        <div class="ch-stack comp-bars">
+          @for (row of scoringComparison(); track row.rosterId) {
+            <a class="comp-row" [routerLink]="['/teams', row.rosterId]">
+              <span class="comp-name">{{ row.teamName }}</span>
+              <div class="ch-stack comp-tracks">
+                <div class="track"><div class="fill pf" [style.width.%]="row.pfPct"></div></div>
+                <div class="track"><div class="fill pa" [style.width.%]="row.paPct"></div></div>
+              </div>
+              <span class="comp-nums mono">
+                <strong>{{ row.pf.toFixed(0) }}</strong> / {{ row.pa.toFixed(0) }}
+              </span>
+            </a>
+          }
+        </div>
+      </section>
+
+      <section class="ch-card ch-stack span-5 movers-card">
+        <div class="ch-row-between">
+          <div>
+            <span class="ch-overline">Reality Check</span>
+            <h2 class="ch-section-title">Power Rank vs Seed</h2>
+          </div>
+          <a class="full-link" routerLink="/insights">Schedule Lab →</a>
+        </div>
+
+        <div class="ch-stack movers-list">
+          @for (m of rankMovers(); track m.rosterId) {
+            <a class="ch-well ch-row-between mover-row" [routerLink]="['/teams', m.rosterId]">
+              <div class="ch-stack">
+                <strong class="mover-team">{{ m.teamName }}</strong>
+                <span class="mover-sub mono">
+                  Seed #{{ m.standingsRank }} · Power #{{ m.powerRank }} · AP {{ m.allPlay }}
+                </span>
+              </div>
+              <span
+                class="ch-chip mono"
+                [class.is-positive]="m.delta > 0"
+                [class.is-negative]="m.delta < 0"
+                [class.is-neutral]="m.delta === 0"
+              >
+                @if (m.delta > 0) {
+                  Underrated +{{ m.delta }}
+                } @else if (m.delta < 0) {
+                  Overperforming {{ m.delta }}
+                } @else {
+                  True Rank
+                }
+              </span>
+            </a>
+          }
+        </div>
+      </section>
+
+      @if (scheduleMatrix(); as matrix) {
+        <section class="ch-card ch-stack span-12 sos-panel">
+          <div class="ch-row-between sos-head">
+            <div>
+              <span class="ch-overline">Schedule Strength &amp; Playoff Runway</span>
+              <h2 class="ch-section-title">Strength of Schedule Matrix</h2>
+            </div>
+
+            <div class="ch-flex-row">
+              <div class="ch-segmented" role="tablist" aria-label="Filter SoS weeks">
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="sosView() === 'all'"
+                  (click)="setSosView('all')"
+                >
+                  Full Slate
+                </button>
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="sosView() === 'remaining'"
+                  (click)="setSosView('remaining')"
+                >
+                  Remaining &amp; Playoffs
+                </button>
+                <button
+                  type="button"
+                  class="ch-segment"
+                  [class.is-active]="sosView() === 'played'"
+                  (click)="setSosView('played')"
+                >
+                  Played
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="ch-btn ch-btn-secondary is-compact"
+                [disabled]="futureLoading()"
+                (click)="syncFutureSchedule()"
+              >
+                {{
+                  futureLoading()
+                    ? 'Syncing...'
+                    : futureSynced()
+                      ? 'Re-Sync Slate'
+                      : 'Load Upcoming Slate'
+                }}
+              </button>
+            </div>
+          </div>
+
+          <div class="sos-highlights">
+            @if (matrix.toughestRos; as hard) {
+              <a class="ch-well sos-highlight-tile" [routerLink]="['/teams', hard.rosterId]">
+                <span class="ch-overline">Toughest Remaining</span>
+                <strong class="sos-hi-team">{{ hard.teamName }}</strong>
+                <span class="sos-hi-meta mono">
+                  Opp Power {{ hard.remainingAvgPower?.toFixed(1) }} · {{ hard.remainingTier }}
+                </span>
+              </a>
+            }
+            @if (matrix.easiestRos; as easy) {
+              <a class="ch-well sos-highlight-tile" [routerLink]="['/teams', easy.rosterId]">
+                <span class="ch-overline">Softest Runway</span>
+                <strong class="sos-hi-team">{{ easy.teamName }}</strong>
+                <span class="sos-hi-meta mono">
+                  Opp Power {{ easy.remainingAvgPower?.toFixed(1) }} · {{ easy.remainingTier }}
+                </span>
+              </a>
+            }
+            @if (matrix.easiestPlayoffs; as po) {
+              <a class="ch-well sos-highlight-tile" [routerLink]="['/teams', po.rosterId]">
+                <span class="ch-overline">Softest Playoff Draw</span>
+                <strong class="sos-hi-team">{{ po.teamName }}</strong>
+                <span class="sos-hi-meta mono">
+                  W{{ matrix.playoffStartWeek }}+ Opp Power {{ po.playoffAvgPower?.toFixed(1) }}
+                </span>
+              </a>
+            }
+            <div class="ch-well sos-highlight-tile">
+              <span class="ch-overline">Matchup Tier Key</span>
+              <div class="ch-flex-row sos-legend">
+                <span class="ch-chip is-positive">Easy</span>
+                <span class="ch-chip is-neutral">Balanced</span>
+                <span class="ch-chip is-negative">Tough</span>
+              </div>
+              <span class="sos-hi-meta mono">Avg Power: {{ matrix.leagueAvgPower.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <!-- Mobile Franchise Runway Picker & Week Cards -->
+          <div class="ch-mobile-feed mobile-sos-inspector">
+            <app-picker
+              [options]="sosTeamOptions()"
+              [value]="activeMobileSosRow()?.rosterId ?? null"
+              [searchable]="true"
+              ariaLabel="Inspect team schedule runway"
+              sheetTitle="Select Team Schedule"
+              (valueChange)="mobileSosRosterId.set($event)"
+            />
+
+            @if (activeMobileSosRow(); as activeRow) {
+              <div class="mobile-sos-summary">
+                @if (activeRow.playedAvgPower !== null) {
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="activeRow.playedTier === 'Easy'"
+                    [class.is-negative]="activeRow.playedTier === 'Tough'"
+                  >
+                    Played: {{ activeRow.playedAvgPower.toFixed(1) }} ({{ activeRow.playedTier }})
+                  </span>
+                }
+                @if (activeRow.remainingAvgPower !== null) {
+                  <span
+                    class="ch-chip mono"
+                    [class.is-positive]="activeRow.remainingTier === 'Easy'"
+                    [class.is-negative]="activeRow.remainingTier === 'Tough'"
+                  >
+                    RoS: {{ activeRow.remainingAvgPower.toFixed(1) }} ({{ activeRow.remainingTier }})
+                  </span>
+                }
+              </div>
+
+              <div class="mobile-sos-grid">
+                @for (cell of activeRow.weekCells; track cell.week) {
+                  @if (visibleSosWeeks().includes(cell.week)) {
+                    @if (cell.opponentRosterId) {
+                      <a
+                        class="sos-opp-pill mobile-sos-pill mono"
+                        [attr.data-tier]="cell.tier"
+                        [routerLink]="['/teams', cell.opponentRosterId]"
+                      >
+                        <div class="ch-row-between">
+                          <span>W{{ cell.week }} {{ cell.isPlayoffWeek ? '· PO' : '' }}</span>
+                          <span>#{{ cell.opponentRank ?? '—' }} {{ cell.isCompleted ? '· ' + cell.result : '' }}</span>
+                        </div>
+                        <strong class="sos-opp-name">{{ cell.opponentName }}</strong>
+                      </a>
+                    } @else {
+                      <div class="sos-opp-pill mobile-sos-pill mono">
+                        <span>W{{ cell.week }}</span>
+                        <strong>BYE</strong>
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Desktop Full Matrix -->
+          <div class="ch-table-wrap ch-desktop-table">
+            <table class="ch-table sos-table">
+              <thead>
+                <tr>
+                  <th class="ch-sticky-col">Franchise</th>
+                  <th class="num">Played SoS</th>
+                  <th class="num">RoS SoS</th>
+                  @for (wk of visibleSosWeeks(); track wk) {
+                    <th class="num mono">
+                      W{{ wk }}
+                      @if (wk >= matrix.playoffStartWeek) {
+                        <span class="po-tag">PO</span>
+                      }
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of matrix.rows; track row.rosterId) {
+                  <tr [class.is-my-row]="myRosterId() === row.rosterId">
+                    <td class="ch-sticky-col">
+                      <a class="team-cell sos-team-link" [routerLink]="['/teams', row.rosterId]">
+                        <span class="mono rank-num">#{{ row.standingsRank }}</span>
+                        <span class="team-name">{{ row.teamName }}</span>
+                      </a>
+                    </td>
+                    <td class="num">
+                      @if (row.playedAvgPower !== null) {
+                        <span
+                          class="ch-chip mono"
+                          [class.is-positive]="row.playedTier === 'Easy'"
+                          [class.is-negative]="row.playedTier === 'Tough'"
+                          [class.is-neutral]="row.playedTier === 'Balanced'"
+                        >
+                          {{ row.playedAvgPower.toFixed(1) }} · {{ row.playedTier }}
+                        </span>
+                      } @else {
+                        <span class="muted-num">—</span>
+                      }
+                    </td>
+                    <td class="num">
+                      @if (row.remainingAvgPower !== null) {
+                        <span
+                          class="ch-chip mono"
+                          [class.is-positive]="row.remainingTier === 'Easy'"
+                          [class.is-negative]="row.remainingTier === 'Tough'"
+                          [class.is-neutral]="row.remainingTier === 'Balanced'"
+                        >
+                          {{ row.remainingAvgPower.toFixed(1) }} · {{ row.remainingTier }}
+                        </span>
+                      } @else {
+                        <span class="muted-num">—</span>
+                      }
+                    </td>
+                    @for (cell of row.weekCells; track cell.week) {
+                      @if (visibleSosWeeks().includes(cell.week)) {
+                        <td class="num sos-cell" [class.is-po-col]="cell.isPlayoffWeek">
+                          @if (cell.opponentRosterId) {
+                            <a
+                              class="sos-opp-pill mono"
+                              [attr.data-tier]="cell.tier"
+                              [routerLink]="['/teams', cell.opponentRosterId]"
+                              [title]="cell.opponentName + ' (Power ' + (cell.opponentPower ?? '—') + ')'"
+                            >
+                              <span class="sos-opp-name">{{ cell.opponentName }}</span>
+                              <span class="sos-opp-sub">
+                                #{{ cell.opponentRank ?? '—' }}
+                                @if (cell.isCompleted) {
+                                  · {{ cell.result }}
+                                }
+                              </span>
+                            </a>
+                          } @else {
+                            <span class="muted-num mono">BYE</span>
+                          }
+                        </td>
+                      }
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+}
