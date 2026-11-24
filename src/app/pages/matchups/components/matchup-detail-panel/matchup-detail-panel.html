@@ -10,34 +10,52 @@
   </div>
 
   <div class="summary-strip">
-    <a class="ch-well side-summary" [routerLink]="['/teams', matchup().home.rosterId]">
-      <span class="summary-name">{{ matchup().home.teamName }}</span>
-      <span class="summary-nums mono">
-        Actual <strong>{{ matchup().home.points.toFixed(2) }}</strong>
-        @if (homeProjTotal(); as hProj) {
-          · Proj {{ hProj.toFixed(2) }}
-        }
-        · Bench {{ homeBenchTotal().toFixed(2) }}
-      </span>
-    </a>
-
-    @if (matchup().away; as away) {
-      <a class="ch-well side-summary" [routerLink]="['/teams', away.rosterId]">
-        <span class="summary-name">{{ away.teamName }}</span>
+    @if (matchup().home.isTbd) {
+      <div class="ch-well side-summary is-tbd">
+        <span class="summary-name">TBD</span>
+        <span class="summary-nums mono">{{ matchup().home.tbdSource || 'Awaiting round winner' }}</span>
+      </div>
+    } @else {
+      <a class="ch-well side-summary" [routerLink]="['/teams', matchup().home.rosterId]">
+        <span class="summary-name">{{ matchup().home.teamName }}</span>
         <span class="summary-nums mono">
-          Actual <strong>{{ away.points.toFixed(2) }}</strong>
-          @if (awayProjTotal(); as aProj) {
-            · Proj {{ aProj.toFixed(2) }}
+          Actual <strong>{{ matchup().home.points.toFixed(2) }}</strong>
+          @if (homeProjTotal(); as hProj) {
+            · Proj {{ hProj.toFixed(2) }}
           }
-          · Bench {{ awayBenchTotal().toFixed(2) }}
+          · Bench {{ homeBenchTotal().toFixed(2) }}
         </span>
       </a>
+    }
+
+    @if (matchup().away; as away) {
+      @if (away.isTbd) {
+        <div class="ch-well side-summary is-tbd">
+          <span class="summary-name">TBD</span>
+          <span class="summary-nums mono">{{ away.tbdSource || 'Awaiting opposing team' }}</span>
+        </div>
+      } @else {
+        <a class="ch-well side-summary" [routerLink]="['/teams', away.rosterId]">
+          <span class="summary-name">{{ away.teamName }}</span>
+          <span class="summary-nums mono">
+            Actual <strong>{{ away.points.toFixed(2) }}</strong>
+            @if (awayProjTotal(); as aProj) {
+              · Proj {{ aProj.toFixed(2) }}
+            }
+            · Bench {{ awayBenchTotal().toFixed(2) }}
+          </span>
+        </a>
+      }
     }
   </div>
 
   @if (starterRows().length === 0) {
     <div class="ch-well empty-detail">
-      Individual starter scores are not available for this matchup yet.
+      @if (matchup().home.isTbd || matchup().away?.isTbd) {
+        Lineups and projections unlock once playoff matchups finalize.
+      } @else {
+        Individual starter scores are not available for this matchup yet.
+      }
     </div>
   } @else {
     <div class="mobile-lineups">

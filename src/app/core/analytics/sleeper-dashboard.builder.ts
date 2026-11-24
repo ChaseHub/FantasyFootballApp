@@ -1,4 +1,6 @@
 import {
+  BracketRoundView,
+  BracketSideView,
   LeagueDashboardData,
   LeagueMoveItem,
   LeaguePlayerRow,
@@ -87,6 +89,45 @@ export function resolveWeekCount(league: SleeperLeague, nflState: SleeperNflStat
     return Math.min(Math.max(candidate, 1), 18);
   }
   return Math.min(Math.max(scoredLeg || 17, 1), 18);
+}
+
+export function resolveTotalSeasonWeeks(
+  league: SleeperLeague,
+  winnersBracket: SleeperBracketMatchup[] = [],
+): number {
+  const rawPlayoffStart = league.settings?.playoff_week_start;
+  const playoffStart = rawPlayoffStart && rawPlayoffStart > 0 ? rawPlayoffStart : 15;
+  const playoffTeams = league.settings?.playoff_teams ?? 6;
+  const bracketMaxRound =
+    winnersBracket.length > 0 ? Math.max(...winnersBracket.map((b) => b.r)) : 0;
+  const playoffRounds =
+    bracketMaxRound > 0
+      ? bracketMaxRound
+      : playoffTeams >= 5
+        ? 3
+        : playoffTeams >= 3
+          ? 2
+          : playoffTeams >= 2
+            ? 1
+            : 0;
+  const playoffEnd = playoffRounds > 0 ? playoffStart + playoffRounds - 1 : 17;
+  const scoredLeg = league.settings?.last_scored_leg ?? league.settings?.leg ?? 0;
+  return Math.min(18, Math.max(playoffEnd, scoredLeg, 1));
+}
+
+export function buildRosterInfoMap(teams: TeamSummary[]): Map<number, RosterMetaInfo> {
+  const rosterInfo = new Map<number, RosterMetaInfo>();
+  for (const t of teams) {
+    const recordLabel = t.ties > 0 ? `${t.wins}-${t.losses}-${t.ties}` : `${t.wins}-${t.losses}`;
+    rosterInfo.set(t.rosterId, {
+      teamName: t.teamName,
+      managerName: t.managerName,
+      avatarUrl: t.avatarUrl,
+      initials: t.initials,
+      recordLabel,
+    });
+  }
+  return rosterInfo;
 }
 
 export function isWeekCompleted(
@@ -350,6 +391,92 @@ export function buildWeekMatchupCards(
   }
 
   return cards;
+}
+
+export function resolvePlayoffWeekCards(params: {
+  week: number;
+  existingCards: WeeklyMatchupCard[];
+  teams: TeamSummary[];
+  winnersRounds: BracketRoundView[];
+  projectedRounds: BracketRoundView[];
+  playoffStartWeek: number;
+}): WeeklyMatchupCard[] {
+  const { week, existingCards, teams, winnersRounds, projectedRounds, playoffStartWeek } = params;
+  const activeRounds = winnersRounds.length > 0 ? winnersRounds : projectedRounds;
+  const round = activeRounds.find((r) => r.week === week) ?? null;
+
+  if (existingCards.length > 0) {
+    if (week < playoffStartWeek || !round) return existingCards;
+    return existingCards.map((card, idx) => {
+      const matched =
+        round.matchups.find(
+          (m) =>
+            (m.top.rosterId === card.home.rosterId && m.bottom.rosterId === card.away?.rosterId) ||
+            (m.top.rosterId === card.away?.rosterId && m.bottom.rosterId === card.home.rosterId),
+        ) ?? round.matchups[idx];
+      return {
+        ...card,
+        playoffLabel: matched?.label || round.title,
+      };
+    });
+  }
+
+  if (week < playoffStartWeek || !round || round.matchups.length === 0) {
+    return [];
+  }
+
+  const teamMap = new Map(teams.map((t) => [t.rosterId, t]));
+  const isProjected = winnersRounds.length === 0;
+
+  const toSide = (side: BracketSideView): WeeklyMatchupSide => {
+    const team = side.rosterId !== null ? teamMap.get(side.rosterId) : undefined;
+    if (team) {
+      return {
+        rosterId: team.rosterId,
+        teamName: team.teamName,
+        managerName: side.seed ? `#${side.seed} Seed · ${team.managerName}` : team.managerName,
+        avatarUrl: team.avatarUrl,
+        initials: team.initials,
+        recordLabel: team.recordLabel,
+        points: side.score ?? 0,
+        isWinner: side.isWinner,
+        starterIds: team.rawStarterIds,
+        playerPoints: {},
+        isTbd: false,
+      };
+    }
+
+    const source =
+      side.placeholder && side.placeholder !== 'TBD'
+        ? side.placeholder
+        : 'Awaiting Round Result';
+    return {
+      rosterId: 0,
+      teamName: 'TBD',
+      managerName: source,
+      avatarUrl: null,
+      initials: '?',
+      recordLabel: 'Playoff Spot',
+      points: 0,
+      isWinner: false,
+      starterIds: [],
+      playerPoints: {},
+      isTbd: true,
+      tbdSource: source,
+    };
+  };
+
+  return round.matchups.map((m) => ({
+    matchupId: m.matchId,
+    week,
+    status: 'Upcoming',
+    isCompleted: false,
+    home: toSide(m.top),
+    away: toSide(m.bottom),
+    margin: 0,
+    playoffLabel: m.label || round.title,
+    isProjected,
+  }));
 }
 
 export function buildDashboardData(params: {

@@ -116,7 +116,7 @@
         </div>
       }
 
-      <div class="popover-list">
+      <div class="popover-list" [style.maxHeight.px]="popoverPos().maxHeight">
         @for (opt of filteredOptions(); track $index) {
           <button
             type="button"

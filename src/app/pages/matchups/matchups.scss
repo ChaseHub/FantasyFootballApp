@@ -4,6 +4,79 @@
   gap: var(--page-gap);
 }
 
+.week-picker {
+  min-width: 130px;
+
+  @include mq(md) {
+    min-width: 168px;
+  }
+}
+
+.playoff-banner {
+  @include row(var(--space-3), center, space-between, wrap);
+  padding: 10px var(--space-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--jade);
+  background: var(--jade-soft);
+}
+
+.playoff-banner-copy {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.playoff-banner-link {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--jade);
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.is-tbd-avatar {
+  border: 1.5px dashed var(--border-strong);
+  background: var(--surface-recessed);
+  color: var(--ink-muted);
+  font-weight: 800;
+}
+
+.is-tbd-row {
+  color: var(--ink-muted);
+}
+
+.tile-tbd-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: var(--r-xs);
+  border: 1px dashed var(--border-strong);
+  color: var(--ink-muted);
+  background: var(--surface-soft);
+}
+
+.scoreboard-side.is-tbd {
+  border: 1px dashed var(--on-graphite-border-strong);
+  background: transparent;
+  cursor: default;
+}
+
+.is-tbd-hero {
+  border: 1.5px dashed var(--on-graphite-border-strong);
+  background: var(--graphite-raised);
+  color: var(--on-graphite-muted);
+}
+
+.is-tbd-score {
+  color: var(--on-graphite-muted);
+  font-size: clamp(22px, 3vw, 32px);
+  letter-spacing: 0.04em;
+}
+
 .skeleton-featured {
   min-height: 190px;
   @include stack(18px);

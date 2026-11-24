@@ -32,6 +32,7 @@ export interface PickerOption<T = string> {
   host: {
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'onEscape()',
+    '(window:resize)': 'onWindowResize()',
     '[class.is-dark]': "tone() === 'dark'",
     '[class.is-compact]': 'compact()',
   },
@@ -58,8 +59,9 @@ export class PickerComponent<T = string> {
     top: number;
     left: number;
     width: number;
+    maxHeight: number;
     openUp: boolean;
-  }>({ top: 0, left: 0, width: 240, openUp: false });
+  }>({ top: 0, left: 0, width: 240, maxHeight: 300, openUp: false });
 
   protected readonly selectedOption = computed(() => {
     const val = this.value();
@@ -110,6 +112,12 @@ export class PickerComponent<T = string> {
     }
   }
 
+  protected onWindowResize(): void {
+    if (this.open() && !this.isMobileViewport()) {
+      this.computePopoverPosition();
+    }
+  }
+
   protected onDocumentClick(ev: MouseEvent): void {
     if (!this.open() || this.isMobileViewport()) return;
     const target = ev.target as Node | null;
@@ -126,10 +134,12 @@ export class PickerComponent<T = string> {
     const maxW = Math.min(340, window.innerWidth - 24);
     const width = Math.max(rect.width, 220);
     const finalW = Math.min(width, maxW);
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < 260 && rect.top > spaceBelow;
+    const spaceBelow = Math.max(120, window.innerHeight - rect.bottom - 16);
+    const spaceAbove = Math.max(120, rect.top - 16);
+    const openUp = spaceBelow < 240 && spaceAbove > spaceBelow;
     const left = Math.max(12, Math.min(rect.left, window.innerWidth - finalW - 12));
     const top = openUp ? Math.max(12, rect.top - 8) : rect.bottom + 6;
-    this.popoverPos.set({ top, left, width: finalW, openUp });
+    const maxHeight = Math.min(340, openUp ? spaceAbove - 12 : spaceBelow - 12);
+    this.popoverPos.set({ top, left, width: finalW, maxHeight, openUp });
   }
 }

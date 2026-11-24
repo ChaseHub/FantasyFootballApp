@@ -132,12 +132,27 @@ export function computeMatchupOdds(
   espn: EspnNflService,
   season: string,
 ): MatchupOddsSummary {
-  const h = computeSideLiveProjection(card.home, sleeper, espn, season, card.week);
+  const h = card.home.isTbd
+    ? { totalProj: null, remainingFraction: 1 }
+    : computeSideLiveProjection(card.home, sleeper, espn, season, card.week);
+
   if (!card.away) {
     return {
       homeProj: h.totalProj,
       awayProj: null,
       homeWinPct: h.totalProj !== null ? 100 : null,
+      awayWinPct: null,
+    };
+  }
+
+  if (card.away.isTbd || card.home.isTbd) {
+    const a = card.away.isTbd
+      ? { totalProj: null, remainingFraction: 1 }
+      : computeSideLiveProjection(card.away, sleeper, espn, season, card.week);
+    return {
+      homeProj: h.totalProj,
+      awayProj: a.totalProj,
+      homeWinPct: null,
       awayWinPct: null,
     };
   }

@@ -35,6 +35,15 @@
   &:hover {
     border-color: var(--border-strong);
   }
+
+  &.is-tbd {
+    border-style: dashed;
+    color: var(--ink-muted);
+
+    &:hover {
+      border-color: var(--border);
+    }
+  }
 }
 
 .summary-name {

@@ -1,4 +1,4 @@
-﻿import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -679,5 +679,113 @@ describe('SleeperService', () => {
     expect(cam?.avgPoints).toBe(18);
     expect(kicker?.seasonPoints).toBe(98);
     expect(kicker?.avgPoints).toBe(9.8);
+  });
+
+  it('loads season-long regular-season matchups and builds playoff weeks with TBD opponents', async () => {
+    const loadPromise = service.loadLeague('season_full_id');
+
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id').flush({
+      league_id: 'season_full_id',
+      name: 'Full Schedule League',
+      season: '2026',
+      status: 'in_season',
+      sport: 'nfl',
+      total_rosters: 6,
+      avatar: null,
+      roster_positions: ['QB', 'RB'],
+      scoring_settings: { rec: 1 },
+      settings: {
+        leg: 12,
+        last_scored_leg: 12,
+        playoff_week_start: 15,
+        playoff_teams: 6,
+      },
+    });
+
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/users').flush([
+      { user_id: 'u1', display_name: 'M1', avatar: null, metadata: { team_name: 'Seed One' } },
+      { user_id: 'u2', display_name: 'M2', avatar: null, metadata: { team_name: 'Seed Two' } },
+      { user_id: 'u3', display_name: 'M3', avatar: null, metadata: { team_name: 'Seed Three' } },
+      { user_id: 'u4', display_name: 'M4', avatar: null, metadata: { team_name: 'Seed Four' } },
+      { user_id: 'u5', display_name: 'M5', avatar: null, metadata: { team_name: 'Seed Five' } },
+      { user_id: 'u6', display_name: 'M6', avatar: null, metadata: { team_name: 'Seed Six' } },
+    ]);
+
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/rosters').flush(
+      [1, 2, 3, 4, 5, 6].map((rid) => ({
+        roster_id: rid,
+        owner_id: `u${rid}`,
+        players: [],
+        starters: [],
+        settings: { wins: 12 - rid, losses: rid, ties: 0, fpts: 1500 - rid * 40, fpts_against: 1200 },
+      })),
+    );
+
+    httpMock.expectOne('https://api.sleeper.app/v1/state/nfl').flush({
+      season: '2026',
+      season_type: 'regular',
+      week: 12,
+      display_week: 12,
+      leg: 12,
+    });
+
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/traded_picks').flush([]);
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/winners_bracket').flush([]);
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/losers_bracket').flush([]);
+    httpMock.expectOne('https://api.sleeper.app/v1/league/season_full_id/drafts').flush([]);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    for (let wk = 1; wk <= 12; wk++) {
+      httpMock
+        .expectOne(`https://api.sleeper.app/v1/league/season_full_id/matchups/${wk}`)
+        .flush(
+          wk === 12
+            ? [
+                { roster_id: 1, matchup_id: 1, points: 112, starters: [], players: [] },
+                { roster_id: 2, matchup_id: 1, points: 98, starters: [], players: [] },
+              ]
+            : [],
+        );
+      httpMock
+        .expectOne(`https://api.sleeper.app/v1/league/season_full_id/transactions/${wk}`)
+        .flush([]);
+    }
+    await loadPromise;
+
+    expect(service.seasonWeeks()).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+
+    const seasonLoad = service.ensureSeasonMatchupsLoaded();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    for (let wk = 1; wk <= 17; wk++) {
+      if (wk === 12) continue;
+      httpMock
+        .expectOne(`https://api.sleeper.app/v1/league/season_full_id/matchups/${wk}`)
+        .flush(
+          wk === 14
+            ? [
+                { roster_id: 1, matchup_id: 1, points: 0, starters: [], players: [] },
+                { roster_id: 3, matchup_id: 1, points: 0, starters: [], players: [] },
+              ]
+            : [],
+        );
+    }
+    await seasonLoad;
+
+    const wk14 = service.getMatchupsForWeek(14);
+    expect(wk14.length).toBe(1);
+    expect(wk14[0].home.teamName).toBe('Seed One');
+    expect(wk14[0].away?.teamName).toBe('Seed Three');
+    expect(wk14[0].status).toBe('Upcoming');
+
+    const wk16 = service.getMatchupsForWeek(16);
+    expect(wk16.length).toBe(2);
+    expect(wk16[0].home.teamName).toBe('Seed One');
+    expect(wk16[0].away?.teamName).toBe('TBD');
+    expect(wk16[0].away?.isTbd).toBe(true);
+
+    const wk17 = service.getMatchupsForWeek(17);
+    expect(wk17.length).toBe(1);
+    expect(wk17[0].home.isTbd).toBe(true);
+    expect(wk17[0].away?.isTbd).toBe(true);
   });
 });

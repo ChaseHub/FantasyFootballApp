@@ -541,12 +541,12 @@
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: none;
     }
   }
 
   .ch-enter {
-    animation: chFadeUp 260ms var(--ease-entrance) both;
+    animation: chFadeUp 260ms var(--ease-entrance) backwards;
   }
 
   [data-motion='reduced'],

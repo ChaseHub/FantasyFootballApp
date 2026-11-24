@@ -296,6 +296,8 @@ export interface WeeklyMatchupSide {
   isWinner: boolean;
   starterIds: string[];
   playerPoints: Record<string, number>;
+  isTbd?: boolean;
+  tbdSource?: string;
 }
 
 export interface WeeklyMatchupCard {
@@ -306,6 +308,8 @@ export interface WeeklyMatchupCard {
   home: WeeklyMatchupSide;
   away: WeeklyMatchupSide | null;
   margin: number;
+  playoffLabel?: string;
+  isProjected?: boolean;
 }
 
 export interface LeaguePulseInsight {

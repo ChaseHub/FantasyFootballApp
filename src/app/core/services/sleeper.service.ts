@@ -20,6 +20,7 @@ import {
   buildLeaguePlayersView,
   buildLeagueTradesView,
   buildRecentMovesView,
+  buildRosterInfoMap,
   buildRosterPlayerStatsView,
   buildTradedPicksView,
   buildWeekMatchupCards,
@@ -29,6 +30,8 @@ import {
   parseSeasonNflStatsMap,
   parseWeekProjectionsMap,
   resolveMatchupStatus,
+  resolvePlayoffWeekCards,
+  resolveTotalSeasonWeeks,
   resolveWeekCount,
   round2,
 } from '../analytics/sleeper-dashboard.builder';
@@ -40,6 +43,7 @@ import {
   RosterPlayerStat,
   SeasonOption,
   SleeperLeague,
+  SleeperMatchup,
   SleeperUser,
   TeamSummary,
   TeamWeeklyScore,
@@ -90,6 +94,9 @@ export class SleeperService {
   private trendingLoaded = false;
   private initialized = false;
   private activeLoadToken = 0;
+  private seasonMatchupsLoadedForLeague = '';
+  private seasonMatchupsPromise: Promise<void> | null = null;
+  private readonly _seasonMatchupsLoading = signal<boolean>(false);
   private readonly projectionFetches = new Set<string>();
   private readonly seasonStatsFetches = new Set<string>();
 
@@ -106,6 +113,7 @@ export class SleeperService {
   readonly projectionsLoading = this._projectionsLoading.asReadonly();
   readonly projectionsByKey = this._projectionsByKey.asReadonly();
   readonly refreshing = this._refreshing.asReadonly();
+  readonly seasonMatchupsLoading = this._seasonMatchupsLoading.asReadonly();
   readonly allTimeHistory = this._allTimeHistory.asReadonly();
   readonly historyLoading = this._historyLoading.asReadonly();
   readonly historyError = this._historyError.asReadonly();
@@ -143,11 +151,32 @@ export class SleeperService {
       .sort((a, b) => a - b);
   });
 
+  readonly seasonWeeks = computed(() => {
+    const data = this._dashboard();
+    if (!data || data.league.status === 'pre_draft') return [];
+    const total = resolveTotalSeasonWeeks(data.league, data.winnersBracket);
+    return Array.from({ length: total }, (_, idx) => idx + 1);
+  });
+
   readonly currentWeekMatchups = computed(() => {
     const data = this._dashboard();
     if (!data) return [];
-    return data.weeklyMatchups[this._selectedWeek()] ?? [];
+    return this.getMatchupsForWeek(this._selectedWeek());
   });
+
+  getMatchupsForWeek(week: number): WeeklyMatchupCard[] {
+    const data = this._dashboard();
+    if (!data || week <= 0) return [];
+    const playoffStart = data.league.settings?.playoff_week_start ?? 15;
+    return resolvePlayoffWeekCards({
+      week,
+      existingCards: data.weeklyMatchups[week] ?? [],
+      teams: data.teams,
+      winnersRounds: this.winnersBracketRounds(),
+      projectedRounds: this.projectedBracketRounds(),
+      playoffStartWeek: playoffStart,
+    });
+  }
 
   readonly featuredMatchup = computed<WeeklyMatchupCard | null>(() => {
     const matchups = this.currentWeekMatchups();
@@ -268,12 +297,85 @@ export class SleeperService {
     }
   }
 
-  fetchFutureScheduleMatchups(
+  async fetchFutureScheduleMatchups(
     leagueId: string,
     fromWeek: number,
     toWeek: number,
   ): Promise<Record<number, Array<[number, number]>>> {
     return this.api.fetchFutureScheduleMatchups(leagueId, fromWeek, toWeek);
+  }
+
+  async ensureSeasonMatchupsLoaded(): Promise<void> {
+    const current = this._dashboard();
+    if (!current || current.league.status === 'pre_draft') return;
+
+    const leagueId = current.league.league_id;
+    if (this.seasonMatchupsLoadedForLeague === leagueId) return;
+    if (this.seasonMatchupsPromise) return this.seasonMatchupsPromise;
+
+    const run = async (): Promise<void> => {
+      const totalWeeks = resolveTotalSeasonWeeks(current.league, current.winnersBracket);
+      const missingWeeks: number[] = [];
+      for (let wk = 1; wk <= totalWeeks; wk += 1) {
+        if ((current.weeklyMatchups[wk]?.length ?? 0) === 0) {
+          missingWeeks.push(wk);
+        }
+      }
+
+      if (missingWeeks.length === 0) {
+        this.seasonMatchupsLoadedForLeague = leagueId;
+        return;
+      }
+
+      this._seasonMatchupsLoading.set(true);
+      try {
+        const fetched = await Promise.all(
+          missingWeeks.map(async (wk) => {
+            try {
+              const entries = await this.api.fetchWeekMatchups(leagueId, wk);
+              return [wk, entries ?? []] as const;
+            } catch {
+              return [wk, [] as SleeperMatchup[]] as const;
+            }
+          }),
+        );
+
+        const latest = this._dashboard();
+        if (!latest || latest.league.league_id !== leagueId) return;
+
+        const rosterInfo = buildRosterInfoMap(latest.teams);
+        const mergedWeekly = { ...latest.weeklyMatchups };
+        let changed = false;
+
+        for (const [wk, entries] of fetched) {
+          if (entries.length === 0 || (mergedWeekly[wk]?.length ?? 0) > 0) continue;
+          const completed = isWeekCompleted(latest.league, latest.nflState, wk, entries);
+          const status = resolveMatchupStatus(entries, completed);
+          const cards = buildWeekMatchupCards(wk, entries, status, completed, rosterInfo);
+          if (cards.length > 0) {
+            mergedWeekly[wk] = cards;
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          this._dashboard.update((cur) => {
+            if (!cur || cur.league.league_id !== leagueId) return cur;
+            return {
+              ...cur,
+              weeklyMatchups: mergedWeekly,
+            };
+          });
+        }
+        this.seasonMatchupsLoadedForLeague = leagueId;
+      } finally {
+        this._seasonMatchupsLoading.set(false);
+        this.seasonMatchupsPromise = null;
+      }
+    };
+
+    this.seasonMatchupsPromise = run();
+    return this.seasonMatchupsPromise;
   }
 
   removeSavedSeason(leagueId: string): void {
@@ -287,6 +389,8 @@ export class SleeperService {
     this.trendingLoaded = false;
     this.projectionFetches.clear();
     this.seasonStatsFetches.clear();
+    this.seasonMatchupsLoadedForLeague = '';
+    this.seasonMatchupsPromise = null;
     this._projectionsByKey.set({});
     this._seasonStatsBySeason.set({});
     this.loadedHistoryKey = '';
@@ -295,6 +399,8 @@ export class SleeperService {
   }
 
   disconnectCurrentLeague(): void {
+    this.seasonMatchupsLoadedForLeague = '';
+    this.seasonMatchupsPromise = null;
     this._dashboard.set(null);
     this._myUserId.set(null);
     this._seasons.set([]);
@@ -403,17 +509,7 @@ export class SleeperService {
         return;
       }
 
-      const rosterInfo = new Map<number, RosterMetaInfo>();
-      for (const t of current.teams) {
-        const recordLabel = t.ties > 0 ? `${t.wins}-${t.losses}-${t.ties}` : `${t.wins}-${t.losses}`;
-        rosterInfo.set(t.rosterId, {
-          teamName: t.teamName,
-          managerName: t.managerName,
-          avatarUrl: t.avatarUrl,
-          initials: t.initials,
-          recordLabel,
-        });
-      }
+      const rosterInfo = buildRosterInfoMap(current.teams);
 
       const weekStatus = resolveMatchupStatus(safeEntries, completed);
       const updatedCards = buildWeekMatchupCards(
@@ -502,6 +598,8 @@ export class SleeperService {
     }
 
     const requestToken = ++this.activeLoadToken;
+    this.seasonMatchupsLoadedForLeague = '';
+    this.seasonMatchupsPromise = null;
     this._loading.set(true);
     this._error.set(null);
 

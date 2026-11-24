@@ -6,12 +6,12 @@ import {
   SleeperService,
   computeMatchupOdds,
 } from '../../core';
-import { PageHeaderComponent, WeekStepperComponent } from '../../shared/ui';
+import { PageHeaderComponent, PickerComponent, PickerOption } from '../../shared/ui';
 import { MatchupDetailPanel } from './components/matchup-detail-panel/matchup-detail-panel';
 
 @Component({
   selector: 'app-matchups',
-  imports: [RouterLink, PageHeaderComponent, WeekStepperComponent, MatchupDetailPanel],
+  imports: [RouterLink, PageHeaderComponent, PickerComponent, MatchupDetailPanel],
   templateUrl: './matchups.html',
   styleUrl: './matchups.scss',
 })
@@ -21,6 +21,78 @@ export class Matchups implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly selectedMatchupId = signal<number | null>(null);
+
+  protected readonly playoffStartWeek = computed(
+    () => this.sleeper.dashboard()?.league.settings?.playoff_week_start ?? 15,
+  );
+
+  protected readonly isPlayoffWeek = computed(
+    () => this.sleeper.selectedWeek() >= this.playoffStartWeek(),
+  );
+
+  protected readonly activePlayoffRoundTitle = computed(() => {
+    const wk = this.sleeper.selectedWeek();
+    if (wk < this.playoffStartWeek()) return null;
+    const real = this.sleeper.winnersBracketRounds().find((r) => r.week === wk);
+    if (real) return real.title;
+    const proj = this.sleeper.projectedBracketRounds().find((r) => r.week === wk);
+    return proj?.title ?? 'Playoffs';
+  });
+
+  protected readonly weekOptions = computed<PickerOption<number>[]>(() => {
+    const dash = this.sleeper.dashboard();
+    const weeks = this.sleeper.seasonWeeks();
+    if (!dash || weeks.length === 0) return [];
+
+    const playoffStart = this.playoffStartWeek();
+    const winnersRounds = this.sleeper.winnersBracketRounds();
+    const projRounds = this.sleeper.projectedBracketRounds();
+    const activeRounds = winnersRounds.length > 0 ? winnersRounds : projRounds;
+
+    return weeks.map((wk) => {
+      if (wk >= playoffStart) {
+        const round = activeRounds.find((r) => r.week === wk);
+        const cleanTitle = (round?.title ?? `Round ${wk - playoffStart + 1}`).replace(
+          ' (Projected)',
+          '',
+        );
+        const shortBadge =
+          cleanTitle.includes('Championship')
+            ? 'FINAL'
+            : cleanTitle.includes('Semi')
+              ? 'SF'
+              : cleanTitle.includes('Quarter')
+                ? 'QF'
+                : 'PO';
+        const cards = dash.weeklyMatchups[wk] ?? [];
+        const hasLive = cards.some((c) => c.status === 'Live');
+        const hasFinal = cards.some((c) => c.isCompleted);
+        return {
+          value: wk,
+          label: `Week ${wk}`,
+          sub: hasLive ? `${cleanTitle} · Live` : hasFinal ? `${cleanTitle} · Final` : cleanTitle,
+          badge: hasLive ? 'LIVE' : shortBadge,
+        };
+      }
+
+      const cards = dash.weeklyMatchups[wk] ?? [];
+      const hasLive = cards.some((c) => c.status === 'Live');
+      const hasFinal = cards.some((c) => c.isCompleted);
+      const isCurrent = wk === dash.currentWeek;
+      return {
+        value: wk,
+        label: `Week ${wk}`,
+        sub: hasLive
+          ? 'Live Matchups'
+          : hasFinal
+            ? 'Final Results'
+            : isCurrent
+              ? 'Current Slate'
+              : 'Scheduled',
+        badge: hasLive ? 'LIVE' : hasFinal ? 'FINAL' : `W${wk}`,
+      };
+    });
+  });
 
   protected readonly activeMatchup = computed(() => {
     const list = this.sleeper.currentWeekMatchups();
@@ -35,7 +107,15 @@ export class Matchups implements OnInit {
 
   protected readonly featuredSummaryLine = computed(() => {
     const m = this.activeMatchup();
-    if (!m || !m.away) return 'Bye week';
+    if (!m) return '';
+    if (m.home.isTbd || m.away?.isTbd) {
+      const round = m.playoffLabel ? `${m.playoffLabel} · ` : '';
+      const feeder = m.away?.isTbd
+        ? m.away.tbdSource || 'Winner advances'
+        : m.home.tbdSource || 'Awaiting bracket result';
+      return `${round}Opponent TBD (${feeder})`;
+    }
+    if (!m.away) return 'Bye week';
     if (m.home.points === 0 && m.away.points === 0) return 'Matchup scheduled';
     if (m.home.points === m.away.points) return 'Scores are tied';
     const leader = m.home.points > m.away.points ? m.home.teamName : m.away.teamName;
@@ -46,7 +126,11 @@ export class Matchups implements OnInit {
   constructor() {
     effect(() => {
       const season = this.sleeper.league()?.season;
+      const leagueId = this.sleeper.league()?.league_id;
       const week = this.sleeper.selectedWeek();
+      if (leagueId) {
+        void this.sleeper.ensureSeasonMatchupsLoaded();
+      }
       if (season && week > 0) {
         this.sleeper.ensureWeekProjections(season, week);
         void this.espn.loadScoreboard(season, week);
@@ -59,12 +143,17 @@ export class Matchups implements OnInit {
     if (!mine) return null;
     const found = this.sleeper
       .currentWeekMatchups()
-      .find((m) => m.home.rosterId === mine.rosterId || m.away?.rosterId === mine.rosterId);
+      .find(
+        (m) =>
+          (!m.home.isTbd && m.home.rosterId === mine.rosterId) ||
+          (!m.away?.isTbd && m.away?.rosterId === mine.rosterId),
+      );
     return found?.matchupId ?? null;
   });
 
   ngOnInit(): void {
     this.sleeper.ensurePlayersLoaded();
+    void this.sleeper.ensureSeasonMatchupsLoaded();
     this.route.queryParamMap.subscribe((params) => {
       const wk = params.get('week');
       if (wk !== null) {
