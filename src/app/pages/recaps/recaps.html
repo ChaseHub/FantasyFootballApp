@@ -20,14 +20,14 @@
       mobileContext="Gazette awards, upsets & boom players"
     >
       <div class="recap-controls">
-        @if (availableWeeks().length > 0) {
-          <app-week-stepper
-            [week]="activeWeek()"
-            [weeks]="availableWeeks()"
-            prefix="Wk"
-            (weekChange)="selectWeek($event)"
-          />
-        }
+        <app-week-picker
+          scope="played"
+          [week]="activeWeek()"
+          prefix="Wk"
+          ariaLabel="Select recap week"
+          sheetTitle="Select Recap Week"
+          (weekChange)="selectWeek($event)"
+        />
 
         <div class="ch-flex-row action-row">
           @if (digest()) {

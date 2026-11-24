@@ -9,10 +9,11 @@
     @if (stateCounts().in > 0 && sleeper.dashboard()) {
       <a class="ch-btn ch-btn-primary is-compact" routerLink="/watch-party">Watch Party →</a>
     }
-    <app-week-stepper
+    <app-week-picker
+      scope="nfl"
       [week]="selectedWeek()"
-      [weeks]="weekChoices"
-      [compact]="true"
+      ariaLabel="Select NFL week"
+      sheetTitle="Select NFL Week"
       (weekChange)="selectWeek($event)"
     />
     <button

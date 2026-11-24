@@ -7,17 +7,15 @@
     </div>
 
     <div class="featured-controls">
-      @if (weekOptions().length > 0) {
-        <app-picker
-          [options]="weekOptions()"
-          [value]="week()"
-          [compact]="true"
-          tone="dark"
-          ariaLabel="Select featured matchup week"
-          sheetTitle="Select Week"
-          (valueChange)="weekSelected.emit($event)"
-        />
-      }
+      <app-week-picker
+        scope="played"
+        [weeks]="availableWeeks().length > 0 ? availableWeeks() : null"
+        [week]="week()"
+        tone="dark"
+        ariaLabel="Select featured matchup week"
+        sheetTitle="Select Week"
+        (weekChange)="weekSelected.emit($event)"
+      />
 
       @if (matchup(); as m) {
         <span

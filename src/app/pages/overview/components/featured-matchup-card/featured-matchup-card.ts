@@ -1,11 +1,11 @@
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { type WeeklyMatchupCard } from '../../../../core';
-import { PickerComponent, type PickerOption } from '../../../../shared/ui';
+import { WeekPickerComponent } from '../../../../shared/ui';
 
 @Component({
   selector: 'app-featured-matchup-card',
-  imports: [RouterLink, PickerComponent],
+  imports: [RouterLink, WeekPickerComponent],
   templateUrl: './featured-matchup-card.html',
   styleUrl: './featured-matchup-card.scss',
 })
@@ -16,14 +16,6 @@ export class FeaturedMatchupCard {
   readonly availableWeeks = input<number[]>([]);
 
   readonly weekSelected = output<number>();
-
-  protected readonly weekOptions = computed<PickerOption<number>[]>(() =>
-    this.availableWeeks().map((wk) => ({
-      value: wk,
-      label: `Week ${wk}`,
-      badge: `W${wk}`,
-    }))
-  );
 
   protected readonly leaderText = computed(() => {
     const m = this.matchup();

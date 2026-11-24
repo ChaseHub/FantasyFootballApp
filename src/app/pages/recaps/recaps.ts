@@ -8,11 +8,11 @@ import {
   buildSeasonWeekChampions,
   buildWeeklyRecap,
 } from '../../core/analytics/weekly-recaps';
-import { PageHeaderComponent, WeekStepperComponent } from '../../shared/ui';
+import { PageHeaderComponent, WeekPickerComponent } from '../../shared/ui';
 
 @Component({
   selector: 'app-recaps',
-  imports: [RouterLink, PageHeaderComponent, WeekStepperComponent],
+  imports: [RouterLink, PageHeaderComponent, WeekPickerComponent],
   templateUrl: './recaps.html',
   styleUrl: './recaps.scss',
 })

@@ -11,7 +11,7 @@ import {
   groupGamesBySlate,
   normalizeNflAbbr,
 } from '../../core';
-import { PageHeaderComponent, WeekStepperComponent } from '../../shared/ui';
+import { PageHeaderComponent, WeekPickerComponent } from '../../shared/ui';
 
 interface GameFantasyPlayer {
   playerId: string;
@@ -36,7 +36,7 @@ interface StatBarRow {
 
 @Component({
   selector: 'app-games',
-  imports: [RouterLink, PageHeaderComponent, WeekStepperComponent],
+  imports: [RouterLink, PageHeaderComponent, WeekPickerComponent],
   templateUrl: './games.html',
   styleUrl: './games.scss',
 })
@@ -49,7 +49,6 @@ export class Games implements OnInit {
   protected readonly playTab = signal<'all' | 'scoring' | 'fantasy'>('all');
   protected readonly selectedGameId = signal<string | null>(null);
   protected readonly pendingTeamAbbr = signal<string | null>(null);
-  protected readonly weekChoices = Array.from({ length: 18 }, (_, i) => i + 1);
   protected readonly selectedWeek = signal<number>(1);
   private weekInitialized = false;
 

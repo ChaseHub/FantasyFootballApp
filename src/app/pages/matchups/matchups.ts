@@ -6,12 +6,12 @@ import {
   SleeperService,
   computeMatchupOdds,
 } from '../../core';
-import { PageHeaderComponent, PickerComponent, PickerOption } from '../../shared/ui';
+import { PageHeaderComponent, WeekPickerComponent } from '../../shared/ui';
 import { MatchupDetailPanel } from './components/matchup-detail-panel/matchup-detail-panel';
 
 @Component({
   selector: 'app-matchups',
-  imports: [RouterLink, PageHeaderComponent, PickerComponent, MatchupDetailPanel],
+  imports: [RouterLink, PageHeaderComponent, WeekPickerComponent, MatchupDetailPanel],
   templateUrl: './matchups.html',
   styleUrl: './matchups.scss',
 })
@@ -37,61 +37,6 @@ export class Matchups implements OnInit {
     if (real) return real.title;
     const proj = this.sleeper.projectedBracketRounds().find((r) => r.week === wk);
     return proj?.title ?? 'Playoffs';
-  });
-
-  protected readonly weekOptions = computed<PickerOption<number>[]>(() => {
-    const dash = this.sleeper.dashboard();
-    const weeks = this.sleeper.seasonWeeks();
-    if (!dash || weeks.length === 0) return [];
-
-    const playoffStart = this.playoffStartWeek();
-    const winnersRounds = this.sleeper.winnersBracketRounds();
-    const projRounds = this.sleeper.projectedBracketRounds();
-    const activeRounds = winnersRounds.length > 0 ? winnersRounds : projRounds;
-
-    return weeks.map((wk) => {
-      if (wk >= playoffStart) {
-        const round = activeRounds.find((r) => r.week === wk);
-        const cleanTitle = (round?.title ?? `Round ${wk - playoffStart + 1}`).replace(
-          ' (Projected)',
-          '',
-        );
-        const shortBadge =
-          cleanTitle.includes('Championship')
-            ? 'FINAL'
-            : cleanTitle.includes('Semi')
-              ? 'SF'
-              : cleanTitle.includes('Quarter')
-                ? 'QF'
-                : 'PO';
-        const cards = dash.weeklyMatchups[wk] ?? [];
-        const hasLive = cards.some((c) => c.status === 'Live');
-        const hasFinal = cards.some((c) => c.isCompleted);
-        return {
-          value: wk,
-          label: `Week ${wk}`,
-          sub: hasLive ? `${cleanTitle} · Live` : hasFinal ? `${cleanTitle} · Final` : cleanTitle,
-          badge: hasLive ? 'LIVE' : shortBadge,
-        };
-      }
-
-      const cards = dash.weeklyMatchups[wk] ?? [];
-      const hasLive = cards.some((c) => c.status === 'Live');
-      const hasFinal = cards.some((c) => c.isCompleted);
-      const isCurrent = wk === dash.currentWeek;
-      return {
-        value: wk,
-        label: `Week ${wk}`,
-        sub: hasLive
-          ? 'Live Matchups'
-          : hasFinal
-            ? 'Final Results'
-            : isCurrent
-              ? 'Current Slate'
-              : 'Scheduled',
-        badge: hasLive ? 'LIVE' : hasFinal ? 'FINAL' : `W${wk}`,
-      };
-    });
   });
 
   protected readonly activeMatchup = computed(() => {

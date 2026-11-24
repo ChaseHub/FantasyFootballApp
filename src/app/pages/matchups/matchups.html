@@ -46,17 +46,14 @@
         }
       }
 
-      @if (weekOptions().length > 0) {
-        <app-picker
-          class="week-picker"
-          [options]="weekOptions()"
-          [value]="sleeper.selectedWeek()"
-          [compact]="true"
-          ariaLabel="Select matchup week"
-          sheetTitle="Select Matchup Week"
-          (valueChange)="selectWeek($event)"
-        />
-      }
+      <app-week-picker
+        class="week-picker"
+        scope="season"
+        [week]="sleeper.selectedWeek()"
+        ariaLabel="Select matchup week"
+        sheetTitle="Select Matchup Week"
+        (weekChange)="selectWeek($event)"
+      />
 
       <button
         type="button"

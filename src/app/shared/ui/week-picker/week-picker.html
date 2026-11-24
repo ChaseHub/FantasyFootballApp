@@ -1,0 +1,13 @@
+@if (pickerOptions().length > 0) {
+  <app-picker
+    class="week-picker-control"
+    [options]="pickerOptions()"
+    [value]="week()"
+    [tone]="tone()"
+    [compact]="compact()"
+    [searchable]="searchable()"
+    [ariaLabel]="ariaLabel()"
+    [sheetTitle]="sheetTitle()"
+    (valueChange)="weekChange.emit($event)"
+  />
+}
